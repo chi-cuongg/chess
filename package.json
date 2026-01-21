@@ -1,0 +1,16 @@
+{
+  "name": "chess-game",
+  "version": "1.0.0",
+  "description": "Ứng dụng chơi cờ vua trên Windows",
+  "main": "index.html",
+  "scripts": {
+    "start": "live-server --port=3000 --open=/index.html",
+    "electron": "electron ."
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^40.0.0",
+    "live-server": "^1.2.2"
+  }
+}

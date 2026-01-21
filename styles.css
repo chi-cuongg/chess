@@ -1,0 +1,778 @@
+/* ========================================
+   CSS Variables & Wooden Theme
+   ======================================== */
+:root {
+    /* Wooden Colors */
+    --wood-dark: #4a3728;
+    --wood-medium: #6b4423;
+    --wood-light: #8b5a2b;
+    --wood-frame: #5d3a1a;
+    --wood-bg: #3d2817;
+
+    /* Board Colors - Classic Wood */
+    --light-square: #e8c999;
+    --dark-square: #a67c52;
+    --light-square-hover: #f0d5a8;
+    --dark-square-hover: #b88c62;
+
+    /* Piece Colors */
+    --piece-gold: #ffd700;
+    --piece-gold-dark: #cc9900;
+    --piece-black: #2d2d2d;
+    --piece-black-light: #4a4a4a;
+
+    /* Accent Colors */
+    --highlight-selected: rgba(255, 215, 0, 0.5);
+    --highlight-move: rgba(100, 200, 100, 0.4);
+    --highlight-capture: rgba(255, 100, 100, 0.5);
+    --highlight-last-move: rgba(200, 180, 100, 0.4);
+    --highlight-check: rgba(255, 50, 50, 0.6);
+
+    /* Text */
+    --text-primary: #ffd699;
+    --text-secondary: #c4a574;
+    --text-dark: #3d2817;
+
+    /* Button Colors */
+    --btn-green: #4CAF50;
+    --btn-green-dark: #388E3C;
+    --btn-pink: #e91e63;
+    --btn-pink-dark: #c2185b;
+    --btn-yellow: #ffeb3b;
+
+    /* Sizing */
+    --square-size: 65px;
+    --board-size: calc(var(--square-size) * 8);
+
+    /* Transitions */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.3s ease;
+}
+
+/* ========================================
+   Reset & Base Styles
+   ======================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Roboto', 'Arial', sans-serif;
+    background: linear-gradient(to bottom,
+            var(--wood-dark) 0%,
+            var(--wood-bg) 30%,
+            #2a1a0f 100%);
+    min-height: 100vh;
+    color: var(--text-primary);
+    overflow-x: hidden;
+    user-select: none;
+}
+
+/* Wooden texture overlay */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ========================================
+   App Container
+   ======================================== */
+.app-container {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding: 15px 20px;
+}
+
+/* ========================================
+   Header - Wooden Banner Style
+   ======================================== */
+.header {
+    text-align: center;
+    padding: 10px 0 20px;
+}
+
+.title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.8rem;
+    font-weight: 700;
+    color: #ffa500;
+    text-shadow:
+        2px 2px 0 #8b4513,
+        4px 4px 0 #5d3a1a,
+        0 0 20px rgba(255, 165, 0, 0.5);
+    letter-spacing: 4px;
+    display: inline-block;
+    padding: 10px 40px;
+    background: linear-gradient(to bottom, var(--wood-light), var(--wood-medium));
+    border-radius: 8px;
+    border: 4px solid var(--wood-frame);
+    box-shadow:
+        inset 0 2px 4px rgba(255, 255, 255, 0.2),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.3),
+        0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+/* ========================================
+   Main Content Layout
+   ======================================== */
+.main-content {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 25px;
+    flex: 1;
+    padding: 10px 0;
+}
+
+/* ========================================
+   Side Panels - Wooden Style
+   ======================================== */
+.side-panel {
+    width: 180px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.captured-section {
+    background: linear-gradient(135deg, var(--wood-medium), var(--wood-dark));
+    border-radius: 10px;
+    padding: 12px;
+    border: 3px solid var(--wood-frame);
+    box-shadow:
+        inset 0 1px 3px rgba(255, 255, 255, 0.1),
+        0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.captured-section h3 {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.captured-pieces {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    min-height: 60px;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    padding: 8px;
+}
+
+.captured-pieces .piece {
+    width: 26px;
+    height: 26px;
+    font-size: 20px;
+    opacity: 0.9;
+}
+
+/* Turn Indicator - Wooden Style */
+.turn-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px;
+    background: linear-gradient(135deg, var(--wood-medium), var(--wood-dark));
+    border-radius: 10px;
+    border: 3px solid var(--wood-frame);
+    font-weight: 600;
+    color: var(--text-primary);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+}
+
+.turn-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+
+.turn-dot.white-turn {
+    background: linear-gradient(135deg, #fff 0%, #ffd700 100%);
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.8);
+}
+
+.turn-dot.black-turn {
+    background: linear-gradient(135deg, #4a4a4a, #2d2d2d);
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
+    border: 2px solid #666;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.15);
+    }
+}
+
+/* ========================================
+   Chess Board Container
+   ======================================== */
+.board-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.board-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--wood-light), var(--wood-medium));
+    padding: 15px;
+    border-radius: 12px;
+    border: 5px solid var(--wood-frame);
+    box-shadow:
+        inset 0 2px 5px rgba(255, 255, 255, 0.15),
+        inset 0 -3px 8px rgba(0, 0, 0, 0.3),
+        0 8px 25px rgba(0, 0, 0, 0.6);
+}
+
+/* Board Labels */
+.board-labels {
+    display: flex;
+    color: var(--text-dark);
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.3);
+}
+
+.row-labels {
+    flex-direction: column;
+    height: var(--board-size);
+    justify-content: space-around;
+    padding-right: 10px;
+}
+
+.row-labels span {
+    height: var(--square-size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.col-labels {
+    width: var(--board-size);
+    justify-content: space-around;
+    padding-top: 8px;
+    margin-left: 30px;
+}
+
+.col-labels span {
+    width: var(--square-size);
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+/* ========================================
+   Chess Board
+   ======================================== */
+.chessboard {
+    display: grid;
+    grid-template-columns: repeat(8, var(--square-size));
+    grid-template-rows: repeat(8, var(--square-size));
+    border: 3px solid var(--wood-frame);
+    border-radius: 4px;
+    box-shadow:
+        inset 0 0 10px rgba(0, 0, 0, 0.3),
+        0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.square {
+    width: var(--square-size);
+    height: var(--square-size);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.square.light {
+    background: linear-gradient(135deg, var(--light-square), #dbb880);
+}
+
+.square.dark {
+    background: linear-gradient(135deg, var(--dark-square), #8b6234);
+}
+
+.square:hover {
+    filter: brightness(1.08);
+}
+
+.square.selected {
+    background: var(--highlight-selected) !important;
+    box-shadow: inset 0 0 15px rgba(255, 215, 0, 0.6);
+}
+
+.square.valid-move::after {
+    content: '';
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    background: radial-gradient(circle, rgba(100, 200, 100, 0.6) 0%, rgba(100, 200, 100, 0.2) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.square.valid-capture::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 4px solid rgba(255, 80, 80, 0.7);
+    border-radius: 50%;
+    box-sizing: border-box;
+    pointer-events: none;
+    background: rgba(255, 50, 50, 0.15);
+}
+
+.square.last-move {
+    background: var(--highlight-last-move) !important;
+}
+
+.square.check {
+    background: radial-gradient(ellipse at center,
+            rgba(255, 50, 50, 0.8) 0%,
+            rgba(255, 50, 50, 0.4) 50%,
+            transparent 80%) !important;
+    animation: checkPulse 0.8s infinite;
+}
+
+@keyframes checkPulse {
+
+    0%,
+    100% {
+        box-shadow: inset 0 0 20px rgba(255, 0, 0, 0.5);
+    }
+
+    50% {
+        box-shadow: inset 0 0 30px rgba(255, 0, 0, 0.8);
+    }
+}
+
+/* ========================================
+   Chess Pieces - 3D Style
+   ======================================== */
+.piece {
+    font-size: 48px;
+    cursor: grab;
+    transition: transform var(--transition-fast);
+    z-index: 10;
+    line-height: 1;
+}
+
+.piece:hover {
+    transform: scale(1.12);
+}
+
+.piece.dragging {
+    cursor: grabbing;
+    transform: scale(1.2);
+    z-index: 1000;
+}
+
+/* Gold pieces (White) */
+.piece.white {
+    color: #ffd700;
+    text-shadow:
+        1px 1px 0 #cc9900,
+        2px 2px 0 #996600,
+        3px 3px 5px rgba(0, 0, 0, 0.4);
+    filter: drop-shadow(2px 3px 3px rgba(0, 0, 0, 0.5));
+}
+
+/* Dark pieces (Black) */
+.piece.black {
+    color: #2d2d2d;
+    text-shadow:
+        1px 1px 0 #4a4a4a,
+        -1px -1px 0 #1a1a1a;
+    filter: drop-shadow(2px 3px 3px rgba(0, 0, 0, 0.6));
+}
+
+/* Piece move animation */
+.piece.moving {
+    transition: all 0.2s ease-out;
+}
+
+/* ========================================
+   Controls - Game Style Buttons
+   ======================================== */
+.controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-icon {
+    font-size: 1.1rem;
+}
+
+/* Primary Button - Pink/Red */
+.btn-primary {
+    background: linear-gradient(180deg, #ff6b9d, #e91e63);
+    color: white;
+    border: 3px solid #c2185b;
+    box-shadow:
+        inset 0 2px 4px rgba(255, 255, 255, 0.3),
+        0 4px 0 #880e4f,
+        0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        inset 0 2px 4px rgba(255, 255, 255, 0.3),
+        0 6px 0 #880e4f,
+        0 10px 20px rgba(0, 0, 0, 0.4);
+}
+
+.btn-primary:active {
+    transform: translateY(2px);
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.2),
+        0 2px 0 #880e4f;
+}
+
+/* Secondary Button - Blue/Teal */
+.btn-secondary {
+    background: linear-gradient(180deg, #64b5f6, #2196f3);
+    color: white;
+    border: 3px solid #1565c0;
+    box-shadow:
+        inset 0 2px 4px rgba(255, 255, 255, 0.3),
+        0 4px 0 #0d47a1,
+        0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-secondary:hover {
+    transform: translateY(-2px);
+}
+
+.btn-secondary:active {
+    transform: translateY(2px);
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.2),
+        0 2px 0 #0d47a1;
+}
+
+/* Accent Button - Green */
+.btn-accent {
+    background: linear-gradient(180deg, #81c784, #4caf50);
+    color: white;
+    border: 3px solid #388e3c;
+    box-shadow:
+        inset 0 2px 4px rgba(255, 255, 255, 0.3),
+        0 4px 0 #1b5e20,
+        0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-accent:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        inset 0 2px 4px rgba(255, 255, 255, 0.3),
+        0 6px 0 #1b5e20,
+        0 10px 20px rgba(0, 0, 0, 0.4);
+}
+
+.btn-accent:active {
+    transform: translateY(2px);
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.2),
+        0 2px 0 #1b5e20;
+}
+
+/* AI Controls */
+.ai-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ai-controls label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ai-controls select {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 3px solid var(--wood-frame);
+    background: linear-gradient(180deg, var(--wood-light), var(--wood-medium));
+    color: var(--text-primary);
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow:
+        inset 0 1px 3px rgba(255, 255, 255, 0.1),
+        0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.ai-controls select:focus {
+    outline: none;
+    border-color: #ffd700;
+}
+
+.ai-controls select option {
+    background: var(--wood-dark);
+    color: var(--text-primary);
+}
+
+/* ========================================
+   Status Bar - Wooden Style
+   ======================================== */
+.status-bar {
+    text-align: center;
+    padding: 12px 20px;
+    background: linear-gradient(180deg, var(--wood-medium), var(--wood-dark));
+    border-radius: 10px;
+    border: 3px solid var(--wood-frame);
+    margin-top: 15px;
+    box-shadow:
+        inset 0 1px 3px rgba(255, 255, 255, 0.1),
+        0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+#game-status {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+#game-status.check {
+    color: #ff6b6b;
+    font-weight: 700;
+    animation: statusPulse 0.5s infinite;
+}
+
+@keyframes statusPulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+#game-status.checkmate {
+    color: #ffd700;
+    font-weight: 700;
+    font-size: 1.2rem;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+/* ========================================
+   Modals - Wooden Theme
+   ======================================== */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.modal.show {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-content {
+    background: linear-gradient(180deg, var(--wood-light), var(--wood-medium));
+    padding: 25px 35px;
+    border-radius: 15px;
+    text-align: center;
+    border: 5px solid var(--wood-frame);
+    box-shadow:
+        inset 0 2px 5px rgba(255, 255, 255, 0.15),
+        0 10px 40px rgba(0, 0, 0, 0.6);
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-40px) scale(0.9);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+.modal-content h2 {
+    font-family: 'Playfair Display', serif;
+    color: #ffa500;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+    font-size: 1.6rem;
+}
+
+.promotion-pieces {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.promotion-pieces .piece {
+    font-size: 55px;
+    padding: 12px 16px;
+    background: linear-gradient(180deg, var(--wood-dark), #2a1a0f);
+    border-radius: 10px;
+    border: 3px solid var(--wood-frame);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.promotion-pieces .piece:hover {
+    background: linear-gradient(180deg, #5d3a1a, var(--wood-dark));
+    transform: scale(1.15);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+}
+
+.game-over-content {
+    min-width: 280px;
+}
+
+.game-over-content p {
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+}
+
+#game-over-title {
+    font-size: 2rem;
+}
+
+/* ========================================
+   Animations
+   ======================================== */
+@keyframes pieceCapture {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.4);
+    }
+
+    100% {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+.piece.captured {
+    animation: pieceCapture 0.3s ease forwards;
+}
+
+/* ========================================
+   Responsive Design
+   ======================================== */
+@media (max-width: 1000px) {
+    :root {
+        --square-size: 55px;
+    }
+
+    .side-panel {
+        width: 160px;
+    }
+
+    .piece {
+        font-size: 40px;
+    }
+
+    .title {
+        font-size: 2.2rem;
+    }
+}
+
+@media (max-width: 850px) {
+    :root {
+        --square-size: 45px;
+    }
+
+    .main-content {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .side-panel {
+        width: 100%;
+        flex-direction: row;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .piece {
+        font-size: 34px;
+    }
+
+    .board-wrapper {
+        padding: 10px;
+    }
+}

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cờ Vua - Chess Game</title>
+    <link rel="stylesheet" href="styles.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="title">♔ Chess Master ♚</h1>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Panel - Captured Pieces -->
+            <aside class="side-panel left-panel">
+                <div class="captured-section">
+                    <h3>Quân bị bắt (Trắng)</h3>
+                    <div id="captured-white" class="captured-pieces"></div>
+                </div>
+                <div class="turn-indicator" id="turn-indicator">
+                    <span class="turn-dot white-turn"></span>
+                    <span>Lượt: Trắng</span>
+                </div>
+            </aside>
+
+            <!-- Chess Board -->
+            <div class="board-container">
+                <div class="board-wrapper">
+                    <div class="board-labels row-labels">
+                        <span>8</span><span>7</span><span>6</span><span>5</span>
+                        <span>4</span><span>3</span><span>2</span><span>1</span>
+                    </div>
+                    <div id="chessboard" class="chessboard"></div>
+                </div>
+                <div class="board-labels col-labels">
+                    <span>a</span><span>b</span><span>c</span><span>d</span>
+                    <span>e</span><span>f</span><span>g</span><span>h</span>
+                </div>
+            </div>
+
+            <!-- Right Panel - Controls -->
+            <aside class="side-panel right-panel">
+                <div class="captured-section">
+                    <h3>Quân bị bắt (Đen)</h3>
+                    <div id="captured-black" class="captured-pieces"></div>
+                </div>
+
+                <div class="controls">
+                    <button id="new-game-btn" class="btn btn-primary">
+                        <span class="btn-icon">🔄</span> Ván mới
+                    </button>
+                    <button id="undo-btn" class="btn btn-secondary">
+                        <span class="btn-icon">↩️</span> Hoàn tác
+                    </button>
+
+                    <div class="ai-controls">
+                        <label>Độ khó AI:</label>
+                        <select id="ai-difficulty">
+                            <option value="0">Chơi 2 người</option>
+                            <option value="2">Dễ</option>
+                            <option value="4" selected>Trung bình</option>
+                            <option value="6">Khó</option>
+                        </select>
+                    </div>
+
+                    <button id="play-ai-btn" class="btn btn-accent">
+                        <span class="btn-icon">🤖</span> Chơi với AI
+                    </button>
+                </div>
+            </aside>
+        </main>
+
+        <!-- Status Bar -->
+        <div id="status-bar" class="status-bar">
+            <span id="game-status">Sẵn sàng bắt đầu!</span>
+        </div>
+
+        <!-- Promotion Modal -->
+        <div id="promotion-modal" class="modal">
+            <div class="modal-content">
+                <h2>Chọn quân phong cấp</h2>
+                <div class="promotion-pieces" id="promotion-pieces"></div>
+            </div>
+        </div>
+
+        <!-- Game Over Modal -->
+        <div id="game-over-modal" class="modal">
+            <div class="modal-content game-over-content">
+                <h2 id="game-over-title">Kết thúc!</h2>
+                <p id="game-over-message"></p>
+                <button id="play-again-btn" class="btn btn-primary">Chơi lại</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/pieces.js"></script>
+    <script src="js/moves.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/game.js"></script>
+</body>
+
+</html>

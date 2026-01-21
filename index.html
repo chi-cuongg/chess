@@ -9,6 +9,8 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap"
         rel="stylesheet">
+    <!-- PeerJS for P2P Connection -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 
 <body>
@@ -20,12 +22,40 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Left Panel - Captured Pieces -->
+            <!-- Left Panel - Online & Captured -->
             <aside class="side-panel left-panel">
+                <!-- Online Controls -->
+                <div id="online-panel" class="online-panel">
+                    <h3>🌐 Chơi Online</h3>
+                    <div class="online-controls">
+                        <button id="create-room-btn" class="btn btn-online">
+                            <span class="btn-icon">🏠</span> Tạo phòng
+                        </button>
+                        <div class="join-room">
+                            <input type="text" id="room-code-input" placeholder="Mã phòng" maxlength="6">
+                            <button id="join-room-btn" class="btn btn-join">Vào</button>
+                        </div>
+                    </div>
+                    <div id="online-status" class="online-status"></div>
+                    <div id="player-info-panel" class="player-info" style="display: none;">
+                        <div>👤 <span id="player-name"></span> <span id="player-color"></span></div>
+                        <div>🎯 vs <span id="opponent-name">-</span></div>
+                    </div>
+                </div>
+
+                <!-- Captured Pieces White -->
                 <div class="captured-section">
-                    <h3>Quân bị bắt (Trắng)</h3>
+                    <h3>⚪ Quân trắng bị bắt</h3>
                     <div id="captured-white" class="captured-pieces"></div>
                 </div>
+
+                <!-- Captured Pieces Black -->
+                <div class="captured-section">
+                    <h3>⚫ Quân đen bị bắt</h3>
+                    <div id="captured-black" class="captured-pieces"></div>
+                </div>
+
+                <!-- Turn Indicator -->
                 <div class="turn-indicator" id="turn-indicator">
                     <span class="turn-dot white-turn"></span>
                     <span>Lượt: Trắng</span>
@@ -49,11 +79,7 @@
 
             <!-- Right Panel - Controls -->
             <aside class="side-panel right-panel">
-                <div class="captured-section">
-                    <h3>Quân bị bắt (Đen)</h3>
-                    <div id="captured-black" class="captured-pieces"></div>
-                </div>
-
+                <!-- Game Controls -->
                 <div class="controls">
                     <button id="new-game-btn" class="btn btn-primary">
                         <span class="btn-icon">🔄</span> Ván mới
@@ -61,9 +87,12 @@
                     <button id="undo-btn" class="btn btn-secondary">
                         <span class="btn-icon">↩️</span> Hoàn tác
                     </button>
+                    <button id="history-btn" class="btn btn-secondary">
+                        <span class="btn-icon">📜</span> Lịch sử
+                    </button>
 
                     <div class="ai-controls">
-                        <label>Độ khó AI:</label>
+                        <label>🤖 Độ khó AI:</label>
                         <select id="ai-difficulty">
                             <option value="0">Chơi 2 người</option>
                             <option value="2">Dễ</option>
@@ -84,6 +113,16 @@
                             <option value="cyber">🤖 Cyber Tech</option>
                             <option value="vampire">🧛 Ma Cà Rồng</option>
                         </select>
+                    </div>
+                </div>
+
+                <!-- Chat Panel (only shows when connected) -->
+                <div id="chat-panel" class="chat-panel">
+                    <h3>💬 Chat</h3>
+                    <div id="chat-messages" class="chat-messages"></div>
+                    <div class="chat-input-container">
+                        <input type="text" id="chat-input" placeholder="Nhập tin nhắn..." maxlength="200">
+                        <button id="chat-send-btn" class="btn-send">➤</button>
                     </div>
                 </div>
             </aside>
@@ -116,13 +155,127 @@
                 <button id="play-again-btn" class="btn btn-primary">Chơi lại</button>
             </div>
         </div>
+
+        <!-- Share Link Modal -->
+        <div id="share-modal" class="modal">
+            <div class="modal-content share-content">
+                <h2>📤 Chia sẻ phòng</h2>
+                <p>Gửi link hoặc mã phòng cho bạn bè:</p>
+                <div class="room-code-display">
+                    <span id="room-code-text"></span>
+                    <button id="copy-code-btn" class="btn btn-small">📋</button>
+                </div>
+                <div class="share-link-container">
+                    <input type="text" id="share-link" readonly>
+                    <button id="copy-link-btn" class="btn btn-primary">📋 Copy Link</button>
+                </div>
+                <p class="share-waiting">⏳ Đang chờ đối thủ kết nối...</p>
+                <button id="close-share-btn" class="btn btn-secondary">Đóng</button>
+            </div>
+        </div>
+
+        <!-- History Modal -->
+        <div id="history-modal" class="modal">
+            <div class="modal-content history-content">
+                <h2>📜 Lịch sử ván đấu</h2>
+                <div id="history-list" class="history-list"></div>
+                <div class="history-modal-actions">
+                    <button id="clear-history-btn" class="btn btn-danger">🗑️ Xóa tất cả</button>
+                    <button id="close-history-btn" class="btn btn-secondary">Đóng</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="js/pieces.js"></script>
     <script src="js/moves.js"></script>
     <script src="js/ai.js"></script>
     <script src="js/game.js"></script>
+    <script src="js/online.js"></script>
+    <script src="js/chat.js"></script>
+    <script src="js/history.js"></script>
     <script src="js/theme.js"></script>
+
+    <script>
+        // Initialize online features
+        document.addEventListener('DOMContentLoaded', () => {
+            // Wait for game to initialize
+            setTimeout(() => {
+                if (window.chessGame) {
+                    // Initialize Online Manager
+                    window.onlineManager = new OnlineManager(window.chessGame);
+
+                    // Initialize Chat Manager
+                    window.chatManager = new ChatManager(window.onlineManager);
+                    window.onlineManager.chatManager = window.chatManager;
+
+                    // Initialize Game History
+                    window.gameHistory = new GameHistory();
+
+                    // Create Room Button
+                    document.getElementById('create-room-btn').addEventListener('click', () => {
+                        const name = prompt('Nhập tên của bạn:', 'Player 1');
+                        if (name) {
+                            window.onlineManager.createRoom(name);
+                        }
+                    });
+
+                    // Join Room Button
+                    document.getElementById('join-room-btn').addEventListener('click', () => {
+                        const roomCode = document.getElementById('room-code-input').value.trim().toUpperCase();
+                        if (roomCode.length === 6) {
+                            const name = prompt('Nhập tên của bạn:', 'Player 2');
+                            if (name) {
+                                window.onlineManager.joinRoom(roomCode, name);
+                            }
+                        } else {
+                            alert('Mã phòng phải có 6 ký tự!');
+                        }
+                    });
+
+                    // Copy Link Button
+                    document.getElementById('copy-link-btn').addEventListener('click', () => {
+                        const linkInput = document.getElementById('share-link');
+                        navigator.clipboard.writeText(linkInput.value).then(() => {
+                            alert('Đã copy link!');
+                        });
+                    });
+
+                    // Copy Code Button
+                    document.getElementById('copy-code-btn')?.addEventListener('click', () => {
+                        const code = document.getElementById('room-code-text').textContent;
+                        navigator.clipboard.writeText(code).then(() => {
+                            alert('Đã copy mã phòng: ' + code);
+                        });
+                    });
+
+                    // Close Share Modal
+                    document.getElementById('close-share-btn').addEventListener('click', () => {
+                        document.getElementById('share-modal').classList.remove('show');
+                    });
+
+                    // History Button
+                    document.getElementById('history-btn').addEventListener('click', () => {
+                        window.gameHistory.renderHistoryModal();
+                        document.getElementById('history-modal').classList.add('show');
+                    });
+
+                    // Close History Modal
+                    document.getElementById('close-history-btn').addEventListener('click', () => {
+                        document.getElementById('history-modal').classList.remove('show');
+                    });
+
+                    // Clear History Button
+                    document.getElementById('clear-history-btn').addEventListener('click', () => {
+                        if (confirm('Xóa tất cả lịch sử ván đấu?')) {
+                            window.gameHistory.clearHistory();
+                            window.gameHistory.renderHistoryModal();
+                        }
+                    });
+                }
+            }, 100);
+        });
+    </script>
 </body>
 
 </html>

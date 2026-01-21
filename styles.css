@@ -2335,6 +2335,425 @@ body {
 }
 
 /* ========================================
+   🌐 Online Panel
+   ======================================== */
+.online-panel {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    padding: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.online-panel h3 {
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.online-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.btn-online {
+    background: linear-gradient(180deg, #4a90d9, #2c5aa0);
+    color: white;
+    border: 2px solid #5a9ee9;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-online:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(74, 144, 217, 0.4);
+}
+
+.join-room {
+    display: flex;
+    gap: 5px;
+}
+
+.join-room input {
+    flex: 1;
+    padding: 8px 10px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    color: inherit;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-align: center;
+}
+
+.join-room input::placeholder {
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.btn-join {
+    padding: 8px 15px;
+    background: linear-gradient(180deg, #4CAF50, #388E3C);
+    color: white;
+    border: 2px solid #66BB6A;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-join:hover {
+    background: linear-gradient(180deg, #66BB6A, #4CAF50);
+}
+
+.online-status {
+    margin-top: 10px;
+    padding: 8px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.85rem;
+    display: none;
+}
+
+.online-status.waiting {
+    display: block;
+    background: rgba(255, 193, 7, 0.2);
+    border: 1px solid rgba(255, 193, 7, 0.5);
+    color: #ffc107;
+}
+
+.online-status.connecting {
+    display: block;
+    background: rgba(33, 150, 243, 0.2);
+    border: 1px solid rgba(33, 150, 243, 0.5);
+    color: #2196f3;
+}
+
+.online-status.connected {
+    display: block;
+    background: rgba(76, 175, 80, 0.2);
+    border: 1px solid rgba(76, 175, 80, 0.5);
+    color: #4CAF50;
+}
+
+.online-status.disconnected,
+.online-status.error {
+    display: block;
+    background: rgba(244, 67, 54, 0.2);
+    border: 1px solid rgba(244, 67, 54, 0.5);
+    color: #f44336;
+}
+
+.player-info {
+    margin-top: 10px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    font-size: 0.8rem;
+}
+
+.player-info div {
+    margin: 3px 0;
+}
+
+/* ========================================
+   💬 Chat Panel
+   ======================================== */
+.chat-panel {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    padding: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    max-height: 250px;
+}
+
+.chat-panel h3 {
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    min-height: 100px;
+    max-height: 150px;
+}
+
+.chat-message {
+    margin-bottom: 8px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+}
+
+.chat-message.own {
+    background: rgba(76, 175, 80, 0.3);
+    border: 1px solid rgba(76, 175, 80, 0.5);
+    margin-left: 20px;
+}
+
+.chat-message.opponent {
+    background: rgba(33, 150, 243, 0.3);
+    border: 1px solid rgba(33, 150, 243, 0.5);
+    margin-right: 20px;
+}
+
+.chat-message.system {
+    background: rgba(255, 193, 7, 0.2);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    text-align: center;
+    font-style: italic;
+}
+
+.chat-sender {
+    font-weight: 600;
+    font-size: 0.7rem;
+    opacity: 0.8;
+    margin-bottom: 2px;
+}
+
+.chat-text {
+    word-wrap: break-word;
+}
+
+.chat-time {
+    font-size: 0.65rem;
+    opacity: 0.6;
+    text-align: right;
+    margin-top: 3px;
+}
+
+.chat-input-container {
+    display: flex;
+    gap: 5px;
+}
+
+.join-room input {
+    flex: 1;
+    min-width: 0;
+    /* Prevent overflow */
+    padding: 8px 6px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    color: inherit;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: center;
+    font-size: 0.8rem;
+}
+
+.join-room input::placeholder {
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.btn-join {
+    padding: 8px 10px;
+    background: linear-gradient(180deg, #4CAF50, #388E3C);
+    color: white;
+    border: 2px solid #66BB6A;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+/* ... existing code ... */
+
+.chat-input-container input {
+    flex: 1;
+    min-width: 0;
+    /* Prevent overflow */
+    padding: 8px 10px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    color: inherit;
+    font-family: inherit;
+    font-size: 0.85rem;
+}
+
+.btn-send {
+    padding: 8px 15px;
+    background: linear-gradient(180deg, #4a90d9, #2c5aa0);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.btn-send:hover {
+    background: linear-gradient(180deg, #5a9ee9, #3c6ab0);
+}
+
+/* ========================================
+   📤 Share Modal
+   ======================================== */
+.share-content {
+    min-width: 400px;
+}
+
+.share-content p {
+    margin-bottom: 15px;
+    opacity: 0.9;
+}
+
+.share-link-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.share-link-container input {
+    flex: 1;
+    padding: 12px 15px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    color: inherit;
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+
+.share-waiting {
+    font-style: italic;
+    opacity: 0.7;
+    margin-bottom: 15px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* ========================================
+   📜 History Modal
+   ======================================== */
+.history-content {
+    min-width: 450px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.history-list {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 400px;
+    margin-bottom: 15px;
+}
+
+.no-history {
+    text-align: center;
+    opacity: 0.6;
+    padding: 30px;
+    font-style: italic;
+}
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.history-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.history-date {
+    font-size: 0.75rem;
+    opacity: 0.6;
+}
+
+.history-opponent {
+    font-weight: 600;
+}
+
+.history-result {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.history-result.win {
+    color: #4CAF50;
+}
+
+.history-result.loss {
+    color: #f44336;
+}
+
+.history-result.draw {
+    color: #ff9800;
+}
+
+.history-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.history-actions button {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+}
+
+.btn-replay {
+    background: #4a90d9;
+    color: white;
+}
+
+.btn-export {
+    background: #9c27b0;
+    color: white;
+}
+
+.btn-delete {
+    background: #f44336;
+    color: white;
+}
+
+.btn-danger {
+    background: linear-gradient(180deg, #f44336, #c62828);
+    color: white;
+    border: 2px solid #ef5350;
+}
+
+/* ========================================
    Responsive Design
    ======================================== */
 @media (max-width: 1000px) {

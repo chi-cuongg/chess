@@ -105,6 +105,12 @@ class OnlineManager {
             this.isConnected = true;
             console.log('Connected!');
 
+            // Close share modal if open
+            const shareModal = document.getElementById('share-modal');
+            if (shareModal) {
+                shareModal.classList.remove('show');
+            }
+
             // Send player info
             this.send({
                 type: 'player_info',
@@ -115,13 +121,17 @@ class OnlineManager {
             // If host, start new game and send initial state
             if (this.isHost) {
                 this.game.newGame();
+                // Send state with a slight delay to ensure connection is ready
                 setTimeout(() => {
                     this.send({
                         type: 'game_state',
                         board: this.game.board,
                         turn: this.game.turn
                     });
-                }, 100);
+                }, 500);
+            } else {
+                // If guest, flip board
+                this.game.flipBoard();
             }
 
             this.updateStatus('connected', 'Đã kết nối!');
@@ -138,6 +148,10 @@ class OnlineManager {
         conn.on('close', () => {
             this.isConnected = false;
             this.updateStatus('disconnected', 'Đối thủ đã ngắt kết nối');
+            // Revert board flip if disconnected
+            if (!this.isHost) {
+                this.game.flipBoard(false);
+            }
         });
 
         conn.on('error', (err) => {

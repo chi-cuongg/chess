@@ -2527,6 +2527,29 @@ body {
     word-wrap: break-word;
 }
 
+/* ========================================
+   🔄 Board Flipping (Black View)
+   ======================================== */
+.board-wrapper.flipped .chessboard {
+    transform: rotate(180deg);
+}
+
+.board-wrapper.flipped .piece {
+    transform: rotate(180deg);
+}
+
+.board-labels.flipped {
+    flex-direction: column-reverse;
+    /* For row labels */
+}
+
+.col-labels.flipped {
+    flex-direction: row-reverse;
+}
+
+/* ========================================
+   💬 Chat Panel
+   ======================================== */
 .chat-time {
     font-size: 0.65rem;
     opacity: 0.6;

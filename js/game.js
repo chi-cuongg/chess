@@ -285,6 +285,23 @@ class ChessGame {
         this.renderBoard();
         this.updateUI();
 
+        // Online Sync
+        if (window.onlineManager && window.onlineManager.isConnected && this.currentTurn !== window.onlineManager.playerColor) {
+            // We just moved, so it's opponent's turn. We need to send the move we just made.
+            // Note: currentTurn has already been switched to opponent's color
+            window.onlineManager.sendMove(fromRow, fromCol, toRow, toCol);
+
+            // Record to history
+            if (window.gameHistory) {
+                window.gameHistory.recordMove({ row: fromRow, col: fromCol }, { row: toRow, col: toCol }, piece, capturedPiece, move.type);
+            }
+        }
+
+        // Local History
+        if (window.gameHistory && !window.onlineManager?.isConnected) {
+            window.gameHistory.recordMove({ row: fromRow, col: fromCol }, { row: toRow, col: toCol }, piece, capturedPiece, move.type);
+        }
+
         // AI move
         if (this.playingAgainstAI && !this.isGameOver && this.currentTurn === this.aiColor) {
             this.updateStatus('AI đang suy nghĩ...');
@@ -342,6 +359,32 @@ class ChessGame {
         // Render
         this.renderBoard();
         this.updateUI();
+
+        // Online Sync
+        if (window.onlineManager && window.onlineManager.isConnected && this.currentTurn !== window.onlineManager.playerColor) {
+            window.onlineManager.sendMove(fromRow, fromCol, toRow, toCol, promoteTo);
+            // Record to history
+            if (window.gameHistory) {
+                window.gameHistory.recordMove(
+                    { row: fromRow, col: fromCol },
+                    { row: toRow, col: toCol },
+                    piece,
+                    capturedPiece,
+                    'promotion'
+                );
+            }
+        }
+
+        // Local History
+        if (window.gameHistory && !window.onlineManager?.isConnected) {
+            window.gameHistory.recordMove(
+                { row: fromRow, col: fromCol },
+                { row: toRow, col: toCol },
+                piece,
+                capturedPiece,
+                'promotion'
+            );
+        }
 
         // AI move
         if (this.playingAgainstAI && !this.isGameOver && this.currentTurn === this.aiColor) {
@@ -598,6 +641,23 @@ class ChessGame {
         document.getElementById('game-over-title').textContent = title;
         document.getElementById('game-over-message').textContent = message;
         this.showModal('game-over-modal');
+    }
+
+    flipBoard(flipped = true) {
+        this.isFlipped = flipped;
+        const boardWrapper = document.querySelector('.board-wrapper');
+        const boardLabels = document.querySelectorAll('.board-labels');
+
+        if (flipped) {
+            boardWrapper.classList.add('flipped');
+            boardLabels.forEach(label => label.classList.add('flipped'));
+        } else {
+            boardWrapper.classList.remove('flipped');
+            boardLabels.forEach(label => label.classList.remove('flipped'));
+        }
+
+        // Re-render to update pieces orientation (keeping them upright)
+        this.renderBoard();
     }
 }
 

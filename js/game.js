@@ -144,6 +144,9 @@ class ChessGame {
         if (this.isGameOver || this.pendingPromotion) return;
         if (this.playingAgainstAI && this.currentTurn === this.aiColor) return;
 
+        // Prevent interaction if playing online and it's not my turn
+        if (window.onlineManager && window.onlineManager.isConnected && !window.onlineManager.isPlayerTurn()) return;
+
         const square = e.target.closest('.square');
         if (!square) return;
 
@@ -641,6 +644,10 @@ class ChessGame {
         document.getElementById('game-over-title').textContent = title;
         document.getElementById('game-over-message').textContent = message;
         this.showModal('game-over-modal');
+    }
+
+    getValidMoves(row, col) {
+        return getLegalMoves(this.board, row, col, this.enPassantTarget, this.castlingRights);
     }
 
     flipBoard(flipped = true) {

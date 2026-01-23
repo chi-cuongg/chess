@@ -39,14 +39,26 @@ class OnlineManager {
         // Generate random room ID
         this.roomId = this.generateRoomId();
 
-        // Initialize PeerJS
+        // Initialize PeerJS with STUN servers
         this.peer = new Peer(this.roomId, {
-            debug: 1
+            debug: 1,
+            config: {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' }
+                ]
+            }
         });
 
         this.peer.on('open', (id) => {
             console.log('Room created with ID:', id);
+            this.roomId = id; // Sync with actual ID from server
             this.updateStatus('waiting', `Đang chờ đối thủ...`);
+
+            // Add room to URL for easier sharing/refresh
+            const newUrl = `${window.location.pathname}?room=${id}`;
+            window.history.replaceState({ path: newUrl }, '', newUrl);
+
             this.showShareLink();
         });
 
@@ -69,9 +81,15 @@ class OnlineManager {
         this.roomId = roomId;
         this.playerColor = 'black';
 
-        // Initialize PeerJS
+        // Initialize PeerJS with STUN servers
         this.peer = new Peer({
-            debug: 1
+            debug: 1,
+            config: {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' }
+                ]
+            }
         });
 
         this.peer.on('open', () => {
@@ -79,7 +97,8 @@ class OnlineManager {
             this.updateStatus('connecting', 'Đang kết nối...');
 
             const conn = this.peer.connect(roomId, {
-                reliable: true
+                reliable: true,
+                serialization: 'json'
             });
 
             this.handleConnection(conn);
@@ -126,7 +145,7 @@ class OnlineManager {
                     this.send({
                         type: 'game_state',
                         board: this.game.board,
-                        turn: this.game.turn
+                        turn: this.game.currentTurn
                     });
                 }, 500);
             } else {
@@ -137,8 +156,8 @@ class OnlineManager {
             this.updateStatus('connected', 'Đã kết nối!');
             this.showOnlineControls();
 
-            // Remove room param from URL
-            window.history.replaceState({}, document.title, window.location.pathname);
+            // Do not remove room param from URL to allow refresh
+            // window.history.replaceState({}, document.title, window.location.pathname);
         });
 
         conn.on('data', (data) => {
@@ -172,7 +191,7 @@ class OnlineManager {
             case 'game_state':
                 // Sync game state (for guest joining)
                 this.game.board = data.board;
-                this.game.turn = data.turn;
+                this.game.currentTurn = data.turn;
                 this.game.renderBoard();
                 this.game.updateTurnIndicator();
                 break;
@@ -245,7 +264,7 @@ class OnlineManager {
     // ========================================
     isPlayerTurn() {
         if (!this.isConnected) return true; // Local play
-        return this.game.turn === this.playerColor;
+        return this.game.currentTurn === this.playerColor;
     }
 
     // ========================================

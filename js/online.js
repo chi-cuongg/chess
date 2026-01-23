@@ -39,13 +39,19 @@ class OnlineManager {
         // Generate random room ID
         this.roomId = this.generateRoomId();
 
-        // Initialize PeerJS with STUN servers
+        // Initialize PeerJS with secure config and more STUN servers
         this.peer = new Peer(this.roomId, {
+            host: '0.peerjs.com',
+            port: 443,
+            secure: true,
             debug: 1,
             config: {
                 iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' }
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun2.l.google.com:19302' },
+                    { urls: 'stun:stun3.l.google.com:19302' },
+                    { urls: 'stun:stun4.l.google.com:19302' }
                 ]
             }
         });
@@ -81,13 +87,19 @@ class OnlineManager {
         this.roomId = roomId;
         this.playerColor = 'black';
 
-        // Initialize PeerJS with STUN servers
+        // Initialize PeerJS with secure config and more STUN servers
         this.peer = new Peer({
+            host: '0.peerjs.com',
+            port: 443,
+            secure: true,
             debug: 1,
             config: {
                 iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' }
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun2.l.google.com:19302' },
+                    { urls: 'stun:stun3.l.google.com:19302' },
+                    { urls: 'stun:stun4.l.google.com:19302' }
                 ]
             }
         });

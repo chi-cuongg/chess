@@ -105,6 +105,15 @@
                         <span class="btn-icon">🤖</span> Chơi với AI
                     </button>
 
+                    <div class="game-controls">
+                        <label>🎮 Loại cờ:</label>
+                        <select id="game-type-selector">
+                            <option value="chess">♟️ Cờ Vua</option>
+                            <option value="xiangqi">🧝 Cờ Tướng</option>
+                            <option value="xo">⭕ Cờ XO (Caro)</option>
+                        </select>
+                    </div>
+
                     <div class="theme-controls">
                         <label>🎨 Giao diện:</label>
                         <select id="theme-selector">
@@ -195,6 +204,9 @@
     <script src="js/chat.js"></script>
     <script src="js/history.js"></script>
     <script src="js/theme.js"></script>
+    <script src="js/xiangqi.js"></script>
+    <script src="js/xo.js"></script>
+    <script src="js/manager.js"></script>
 
     <script>
         // Initialize online features

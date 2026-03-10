@@ -2827,3 +2827,220 @@ body {
         font-size: 1.6rem !important;
     }
 }
+
+/* ========================================
+   🧝 XIANGQI (CHINESE CHESS) STYLES 🧝
+   ======================================== */
+.xiangqi-board {
+    display: grid;
+    grid-template-columns: repeat(9, 60px);
+    grid-template-rows: repeat(10, 60px);
+    gap: 0;
+    background-color: #dcb35c;
+    border: 5px solid #8b4513;
+    position: relative;
+    width: 540px;
+    /* 9 * 60 */
+    height: 600px;
+    /* 10 * 60 */
+    margin: 0 auto;
+}
+
+.xiangqi-board .square {
+    width: 60px;
+    height: 60px;
+    border: none;
+    /* We draw lines manually or via background */
+    position: relative;
+    background: transparent;
+    z-index: 10;
+}
+
+/* Drawing the grid lines */
+.xiangqi-board::before {
+    content: '';
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    width: 480px;
+    /* (9-1) * 60 */
+    height: 540px;
+    /* (10-1) * 60 */
+    background-image:
+        linear-gradient(#000 1px, transparent 1px),
+        linear-gradient(90deg, #000 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* The River */
+.xiangqi-board::after {
+    content: 'Sở Hà 漢 界 Hán Giới';
+    position: absolute;
+    top: 270px;
+    /* After 4 rows (4 * 60 + 30) ? No, 5th rank. 4.5 * 60 = 270 */
+    left: 30px;
+    width: 480px;
+    height: 60px;
+    background-color: #dcb35c;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    font-family: "KaiTi", "SimSun", serif;
+    color: #5d4037;
+    z-index: 1;
+}
+
+/* Palace diagonals */
+.palace-top {
+    position: absolute;
+    top: 30px;
+    left: 210px;
+    /* 3 * 60 + 30 */
+    width: 120px;
+    height: 120px;
+    background:
+        linear-gradient(45deg, transparent 49%, #000 49%, #000 51%, transparent 51%),
+        linear-gradient(-45deg, transparent 49%, #000 49%, #000 51%, transparent 51%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.palace-bottom {
+    position: absolute;
+    bottom: 30px;
+    left: 210px;
+    width: 120px;
+    height: 120px;
+    background:
+        linear-gradient(45deg, transparent 49%, #000 49%, #000 51%, transparent 51%),
+        linear-gradient(-45deg, transparent 49%, #000 49%, #000 51%, transparent 51%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Xiangqi Pieces */
+.xiangqi-piece {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background-color: #f0d5a0;
+    border: 3px solid #8b5a2b;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 28px;
+    font-weight: bold;
+    font-family: "KaiTi", "SimSun", serif;
+    z-index: 10;
+    cursor: pointer;
+    user-select: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.xiangqi-piece.red {
+    color: #cc0000;
+    border-color: #cc0000;
+}
+
+.xiangqi-piece.black {
+    color: #000000;
+    border-color: #000000;
+}
+
+
+/* ========================================
+   ⭕ XO (CARO) STYLES ⭕
+   ======================================== */
+.xo-board {
+    display: grid;
+    grid-template-columns: repeat(15, 30px);
+    grid-template-rows: repeat(15, 30px);
+    gap: 0;
+    border: 2px solid #333;
+    background-color: #f0e68c;
+    margin: 0 auto;
+    width: fit-content;
+}
+
+.xo-board .square {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #999;
+    box-shadow: none;
+    /* Reset standard square shadow */
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.xo-board .square:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.xo-piece {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.xo-piece.x {
+    color: #ff0000;
+}
+
+.xo-piece.o {
+    color: #0000ff;
+}
+
+/* Hide labels for non-chess games by default via JS */
+.hidden {
+    display: none !important;
+}
+
+/* Adjustments for smaller screens for Xiangqi/XO if needed */
+@media (max-width: 850px) {
+    .xiangqi-board {
+        transform: scale(0.65);
+        margin-top: -100px;
+        margin-bottom: -100px;
+    }
+}
+
+/* Check Overlay */
+.check-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(255, 0, 0, 0.8);
+    color: white;
+    padding: 20px 40px;
+    border-radius: 10px;
+    font-size: 2em;
+    font-weight: bold;
+    z-index: 1000;
+    pointer-events: none;
+    animation: pulseCheck 0.5s infinite alternate;
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+    border: 2px solid #ffeba7;
+}
+
+@keyframes pulseCheck {
+    from {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.8;
+    }
+
+    to {
+        transform: translate(-50%, -50%) scale(1.1);
+        opacity: 1;
+    }
+}

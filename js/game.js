@@ -59,13 +59,8 @@ class ChessGame {
         const chessboard = document.getElementById('chessboard');
         chessboard.addEventListener('click', (e) => this.handleSquareClick(e));
 
-        document.getElementById('new-game-btn').addEventListener('click', () => this.newGame());
-        document.getElementById('undo-btn').addEventListener('click', () => this.undoMove());
         document.getElementById('play-ai-btn').addEventListener('click', () => this.toggleAI());
-        document.getElementById('play-again-btn').addEventListener('click', () => {
-            this.hideModal('game-over-modal');
-            this.newGame();
-        });
+
 
         // Promotion piece selection
         document.getElementById('promotion-pieces').addEventListener('click', (e) => {

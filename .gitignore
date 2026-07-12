@@ -34,3 +34,6 @@ desktop.ini
 *.dll
 *.so
 *.dylib
+
+# Backup files
+*.bak

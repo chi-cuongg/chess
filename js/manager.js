@@ -33,6 +33,15 @@ class GameManager {
             }
         });
 
+        document.getElementById('play-ai-btn')?.addEventListener('click', () => {
+            if (this.currentGame && typeof this.currentGame.toggleAI === 'function') {
+                this.currentGame.toggleAI();
+            } else {
+                const status = document.getElementById('game-status');
+                if (status) status.textContent = 'Loại cờ này chưa hỗ trợ chơi với AI';
+            }
+        });
+
         document.getElementById('play-again-btn')?.addEventListener('click', () => {
             document.getElementById('game-over-modal')?.classList.remove('show');
             if (this.currentGame && typeof this.currentGame.newGame === 'function') {
@@ -95,6 +104,17 @@ class GameManager {
         const rowLabels = document.querySelector('.row-labels');
         const colLabels = document.querySelector('.col-labels');
         const capturedSections = document.querySelectorAll('.captured-section');
+
+        // Each game keeps its own AI state - sync the button label to it
+        const aiBtn = document.getElementById('play-ai-btn');
+        if (aiBtn && this.currentGame) {
+            const aiOn = !!this.currentGame.playingAgainstAI;
+            aiBtn.innerHTML = aiOn
+                ? '<span class="btn-icon">👥</span> Chơi 2 người'
+                : '<span class="btn-icon">🤖</span> Chơi với AI';
+            aiBtn.classList.toggle('btn-secondary', aiOn);
+            aiBtn.classList.toggle('btn-accent', !aiOn);
+        }
 
         if (type === 'chess') {
             rowLabels.style.display = 'flex';

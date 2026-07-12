@@ -95,7 +95,6 @@ function getCastlingMoves(board, color, castlingRights) {
     if (!castlingRights) return moves;
 
     const row = color === 'white' ? 7 : 0;
-    const kingCol = 4;
 
     // Can't castle if in check
     if (isInCheck(board, color)) return moves;

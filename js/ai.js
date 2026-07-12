@@ -227,6 +227,7 @@ function minimax(board, depth, alpha, beta, isMaximizing, enPassantTarget, castl
 }
 
 // Find best move for AI
+/* exported findBestMove */
 function findBestMove(board, color, depth, enPassantTarget, castlingRights) {
     const moves = getAllLegalMoves(board, color, enPassantTarget, castlingRights);
     if (moves.length === 0) return null;

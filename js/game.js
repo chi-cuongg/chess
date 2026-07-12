@@ -69,11 +69,10 @@ class ChessGame {
         const chessboard = document.getElementById('chessboard');
         chessboard.addEventListener('click', (e) => this.handleSquareClick(e));
 
-        // Buttons and modals persist across game switches - bind them only once
+        // Buttons and modals persist across game switches - bind them only once.
+        // The play-ai-btn is bound by GameManager (routes to the active game).
         if (this.uiListenersBound) return;
         this.uiListenersBound = true;
-
-        document.getElementById('play-ai-btn').addEventListener('click', () => this.toggleAI());
 
         // Promotion piece selection
         document.getElementById('promotion-pieces').addEventListener('click', (e) => {
@@ -599,7 +598,7 @@ class ChessGame {
         if (!this.aiWorker) {
             try {
                 this.aiWorker = new Worker('js/ai-worker.js');
-            } catch (e) {
+            } catch {
                 this.aiWorkerFailed = true;
                 return null;
             }

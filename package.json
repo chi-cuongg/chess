@@ -6,12 +6,15 @@
   "scripts": {
     "start": "live-server --port=3000 --open=/index.html",
     "electron": "electron .",
-    "test": "node tests/run-tests.js"
+    "test": "node tests/run-tests.js",
+    "lint": "eslint ."
   },
   "author": "",
   "license": "MIT",
   "devDependencies": {
     "electron": "^40.0.0",
+    "eslint": "^10.7.0",
+    "globals": "^17.7.0",
     "live-server": "^1.2.2"
   }
 }

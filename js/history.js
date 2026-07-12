@@ -78,7 +78,7 @@ class GameHistory {
         try {
             const data = localStorage.getItem(this.storageKey);
             return data ? JSON.parse(data) : [];
-        } catch (e) {
+        } catch {
             return [];
         }
     }
@@ -234,7 +234,7 @@ class GameHistory {
 
                 return san;
             });
-        } catch (e) {
+        } catch {
             // Fallback: simple coordinate notation
             return moves.map(mv => `${square(mv.from)}-${square(mv.to)}`);
         }

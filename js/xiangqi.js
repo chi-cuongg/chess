@@ -1,3 +1,4 @@
+/* exported XiangqiGame */
 class XiangqiGame {
     constructor() {
         // Red is at the bottom (rows 7-9), Black at top (rows 0-2)

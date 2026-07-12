@@ -12,7 +12,7 @@ class GameHistory {
     // ========================================
     // Start Recording a Game
     // ========================================
-    startGame(mode, opponent = 'AI') {
+    startGame(mode, opponent = 'AI', playerColor = 'white') {
         this.currentGame = {
             id: Date.now(),
             date: new Date().toISOString(),
@@ -21,14 +21,14 @@ class GameHistory {
             moves: [],
             result: null,
             winner: null,
-            playerColor: 'white'
+            playerColor: playerColor
         };
     }
 
     // ========================================
     // Record a Move
     // ========================================
-    recordMove(from, to, piece, captured = null, special = null) {
+    recordMove(from, to, piece, captured = null, special = null, promoteTo = null) {
         if (!this.currentGame) return;
 
         this.currentGame.moves.push({
@@ -36,7 +36,8 @@ class GameHistory {
             to: { row: to.row, col: to.col },
             piece: piece,
             captured: captured,
-            special: special, // 'castle', 'enpassant', 'promotion'
+            special: special, // 'castling', 'enpassant', 'promotion'
+            promoteTo: promoteTo,
             time: Date.now()
         });
     }
@@ -107,47 +108,144 @@ class GameHistory {
     }
 
     // ========================================
-    // Convert to PGN Format
+    // Convert to PGN Format (standard SAN notation)
     // ========================================
     toPGN(game) {
-        const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-        const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+        const playerColor = game.playerColor || 'white';
+        const whiteName = playerColor === 'white' ? 'Player' : game.opponent;
+        const blackName = playerColor === 'white' ? game.opponent : 'Player';
 
         let pgn = '';
-
-        // Headers
         pgn += `[Event "Chess Master Game"]\n`;
-        pgn += `[Date "${new Date(game.date).toISOString().split('T')[0]}"]\n`;
-        pgn += `[White "Player"]\n`;
-        pgn += `[Black "${game.opponent}"]\n`;
+        pgn += `[Date "${new Date(game.date).toISOString().split('T')[0].replace(/-/g, '.')}"]\n`;
+        pgn += `[White "${whiteName}"]\n`;
+        pgn += `[Black "${blackName}"]\n`;
         pgn += `[Result "${this.getResultString(game)}"]\n\n`;
 
-        // Moves
-        game.moves.forEach((move, index) => {
+        const sanMoves = this.movesToSAN(game.moves);
+        sanMoves.forEach((san, index) => {
             if (index % 2 === 0) {
                 pgn += `${Math.floor(index / 2) + 1}. `;
             }
-
-            const fromSquare = files[move.from.col] + ranks[move.from.row];
-            const toSquare = files[move.to.col] + ranks[move.to.row];
-
-            pgn += `${fromSquare}-${toSquare} `;
+            pgn += `${san} `;
         });
 
         pgn += this.getResultString(game);
-
         return pgn;
     }
 
+    // Replays the game from the initial position to build proper SAN
+    // (needs the chess move functions loaded globally). Falls back to
+    // simple from-to notation if anything goes wrong.
+    movesToSAN(moves) {
+        const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+        const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+        const square = (m) => files[m.col] + ranks[m.row];
+
+        try {
+            if (typeof getLegalMoves !== 'function' || typeof isInCheck !== 'function') {
+                throw new Error('chess engine not loaded');
+            }
+
+            let board = [
+                ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+                ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+                [null, null, null, null, null, null, null, null],
+                [null, null, null, null, null, null, null, null],
+                [null, null, null, null, null, null, null, null],
+                [null, null, null, null, null, null, null, null],
+                ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+                ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+            ];
+
+            return moves.map(mv => {
+                const piece = board[mv.from.row][mv.from.col];
+                if (!piece) throw new Error('replay desync');
+
+                const pieceType = piece.toUpperCase();
+                const color = getPieceByCode(piece).color;
+                const isCapture = !!mv.captured || mv.special === 'enpassant';
+                let san;
+
+                if (mv.special === 'castling') {
+                    san = mv.to.col === 6 ? 'O-O' : 'O-O-O';
+                } else {
+                    let prefix = '';
+                    if (pieceType === 'P') {
+                        if (isCapture) prefix = files[mv.from.col];
+                    } else {
+                        prefix = pieceType;
+                        // Disambiguation: another piece of the same type can reach the target
+                        const others = [];
+                        for (let r = 0; r < 8; r++) {
+                            for (let c = 0; c < 8; c++) {
+                                if ((r !== mv.from.row || c !== mv.from.col) && board[r][c] === piece) {
+                                    const legal = getLegalMoves(board, r, c, null, null);
+                                    if (legal.some(m => m.row === mv.to.row && m.col === mv.to.col)) {
+                                        others.push({ r, c });
+                                    }
+                                }
+                            }
+                        }
+                        if (others.length > 0) {
+                            if (others.every(o => o.c !== mv.from.col)) {
+                                prefix += files[mv.from.col];
+                            } else if (others.every(o => o.r !== mv.from.row)) {
+                                prefix += ranks[mv.from.row];
+                            } else {
+                                prefix += files[mv.from.col] + ranks[mv.from.row];
+                            }
+                        }
+                    }
+
+                    san = prefix + (isCapture ? 'x' : '') + square(mv.to);
+                    if (mv.special === 'promotion') {
+                        san += '=' + (mv.promoteTo || 'Q').toUpperCase();
+                    }
+                }
+
+                // Apply the move to the board
+                if (mv.special === 'enpassant') {
+                    const capturedPawnRow = color === 'white' ? mv.to.row + 1 : mv.to.row - 1;
+                    board[capturedPawnRow][mv.to.col] = null;
+                }
+                if (mv.special === 'castling') {
+                    if (mv.to.col === 6) {
+                        board[mv.to.row][5] = board[mv.to.row][7];
+                        board[mv.to.row][7] = null;
+                    } else {
+                        board[mv.to.row][3] = board[mv.to.row][0];
+                        board[mv.to.row][0] = null;
+                    }
+                }
+                let placed = piece;
+                if (mv.special === 'promotion') {
+                    const p = (mv.promoteTo || 'Q');
+                    placed = color === 'white' ? p.toUpperCase() : p.toLowerCase();
+                }
+                board[mv.to.row][mv.to.col] = placed;
+                board[mv.from.row][mv.from.col] = null;
+
+                // Check / checkmate suffix
+                const opponent = color === 'white' ? 'black' : 'white';
+                if (isInCheck(board, opponent)) {
+                    san += (typeof isCheckmate === 'function' && isCheckmate(board, opponent, null, null)) ? '#' : '+';
+                }
+
+                return san;
+            });
+        } catch (e) {
+            // Fallback: simple coordinate notation
+            return moves.map(mv => `${square(mv.from)}-${square(mv.to)}`);
+        }
+    }
+
     getResultString(game) {
-        if (game.result === 'checkmate') {
+        if (game.result === 'checkmate' || game.result === 'resign') {
             return game.winner === 'white' ? '1-0' : '0-1';
         }
         if (game.result === 'stalemate' || game.result === 'draw') {
             return '1/2-1/2';
-        }
-        if (game.result === 'resign') {
-            return game.winner === 'white' ? '1-0' : '0-1';
         }
         return '*';
     }
@@ -166,12 +264,15 @@ class GameHistory {
             return;
         }
 
-        container.innerHTML = history.map(game => `
+        container.innerHTML = history.map(game => {
+            const playerColor = game.playerColor || 'white';
+            const resultClass = !game.winner ? 'draw' : (game.winner === playerColor ? 'win' : 'loss');
+            return `
             <div class="history-item" data-id="${game.id}">
                 <div class="history-info">
                     <div class="history-date">${new Date(game.date).toLocaleDateString('vi-VN')}</div>
-                    <div class="history-opponent">vs ${game.opponent}</div>
-                    <div class="history-result ${game.winner === 'white' ? 'win' : game.winner === 'black' ? 'loss' : 'draw'}">
+                    <div class="history-opponent">vs ${this.escapeHtml(game.opponent || '?')}</div>
+                    <div class="history-result ${resultClass}">
                         ${this.getResultText(game)}
                     </div>
                 </div>
@@ -181,7 +282,8 @@ class GameHistory {
                     <button class="btn-delete" data-id="${game.id}">🗑️</button>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
 
         // Add event listeners
         container.querySelectorAll('.btn-replay').forEach(btn => {
@@ -202,15 +304,19 @@ class GameHistory {
         });
     }
 
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     getResultText(game) {
-        if (game.result === 'checkmate') {
-            return game.winner === 'white' ? '🏆 Thắng' : '❌ Thua';
+        const playerColor = game.playerColor || 'white';
+        if (game.result === 'checkmate' || game.result === 'resign') {
+            return game.winner === playerColor ? '🏆 Thắng' : '❌ Thua';
         }
         if (game.result === 'stalemate') return '🤝 Hòa (Pat)';
         if (game.result === 'draw') return '🤝 Hòa';
-        if (game.result === 'resign') {
-            return game.winner === 'white' ? '🏆 Thắng' : '❌ Thua';
-        }
         return '⏸️ Chưa kết thúc';
     }
 

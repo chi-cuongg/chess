@@ -7,15 +7,24 @@ function isSquareAttacked(board, row, col, byColor) {
     for (let r = 0; r < 8; r++) {
         for (let c = 0; c < 8; c++) {
             const piece = board[r][c];
-            if (piece) {
-                const pieceInfo = getPieceByCode(piece);
-                if (pieceInfo.color === byColor) {
-                    const moves = getPseudoLegalMoves(board, r, c);
-                    for (const move of moves) {
-                        if (move.row === row && move.col === col) {
-                            return true;
-                        }
-                    }
+            if (!piece) continue;
+
+            const pieceInfo = getPieceByCode(piece);
+            if (pieceInfo.color !== byColor) continue;
+
+            // Pawns only attack diagonally - their forward moves are not attacks
+            if (piece.toUpperCase() === 'P') {
+                const direction = byColor === 'white' ? -1 : 1;
+                if (r + direction === row && (c - 1 === col || c + 1 === col)) {
+                    return true;
+                }
+                continue;
+            }
+
+            const moves = getPseudoLegalMoves(board, r, c);
+            for (const move of moves) {
+                if (move.row === row && move.col === col) {
+                    return true;
                 }
             }
         }
@@ -91,9 +100,11 @@ function getCastlingMoves(board, color, castlingRights) {
     // Can't castle if in check
     if (isInCheck(board, color)) return moves;
 
+    const rookCode = color === 'white' ? 'R' : 'r';
+
     // Kingside castling
     const kingsideRight = color === 'white' ? castlingRights.whiteKingside : castlingRights.blackKingside;
-    if (kingsideRight) {
+    if (kingsideRight && board[row][7] === rookCode) {
         // Check if squares between king and rook are empty
         if (!board[row][5] && !board[row][6]) {
             // Check if king doesn't pass through or end up in check
@@ -106,7 +117,7 @@ function getCastlingMoves(board, color, castlingRights) {
 
     // Queenside castling
     const queensideRight = color === 'white' ? castlingRights.whiteQueenside : castlingRights.blackQueenside;
-    if (queensideRight) {
+    if (queensideRight && board[row][0] === rookCode) {
         // Check if squares between king and rook are empty
         if (!board[row][1] && !board[row][2] && !board[row][3]) {
             // Check if king doesn't pass through or end up in check
@@ -253,4 +264,20 @@ function getAllLegalMoves(board, color, enPassantTarget = null, castlingRights =
     }
 
     return allMoves;
+}
+
+// Node.js export (for unit tests) - no effect in the browser
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        isSquareAttacked,
+        findKing,
+        isInCheck,
+        makeMoveCopy,
+        getCastlingMoves,
+        getLegalMoves,
+        isCheckmate,
+        isStalemate,
+        isInsufficientMaterial,
+        getAllLegalMoves
+    };
 }

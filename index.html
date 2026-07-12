@@ -5,12 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cờ Vua - Chess Game</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♔</text></svg>">
     <link rel="stylesheet" href="styles.css">
     <link
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap"
         rel="stylesheet">
-    <!-- PeerJS for P2P Connection -->
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <!-- PeerJS for P2P Connection (bundled locally so the Electron app works offline) -->
+    <script src="js/vendor/peerjs.min.js"></script>
 </head>
 
 <body>
@@ -209,10 +211,11 @@
     <script src="js/manager.js"></script>
 
     <script>
-        // Initialize online features
+        // Initialize online features.
+        // This handler registers after game.js's, so window.chessGame
+        // is already created when it runs.
         document.addEventListener('DOMContentLoaded', () => {
-            // Wait for game to initialize
-            setTimeout(() => {
+            {
                 if (window.chessGame) {
                     // Initialize Online Manager
                     window.onlineManager = new OnlineManager(window.chessGame);
@@ -285,7 +288,7 @@
                         }
                     });
                 }
-            }, 100);
+            }
         });
     </script>
 </body>

@@ -205,7 +205,7 @@ class OnlineManager {
                 this.game.board = data.board;
                 this.game.currentTurn = data.turn;
                 this.game.renderBoard();
-                this.game.updateTurnIndicator();
+                this.game.updateUI();
                 break;
 
             case 'move':
@@ -258,16 +258,17 @@ class OnlineManager {
 
         // Get valid moves for the piece
         const validMoves = this.game.getValidMoves(from.row, from.col);
-        const move = validMoves.find(m => m.row === to.row && m.col === to.col);
+        const move = promotion
+            ? validMoves.find(m => m.row === to.row && m.col === to.col &&
+                m.type === 'promotion' && m.promoteTo === promotion)
+            : validMoves.find(m => m.row === to.row && m.col === to.col);
 
         if (move) {
-            // Handle promotion
-            if (promotion) {
-                this.game.pendingPromotion = { from, to };
-                this.game.promotePawn(promotion);
-            } else {
-                this.game.makeMove(from.row, from.col, to.row, to.col, move);
-            }
+            // fromRemote: don't echo the move back to the opponent
+            this.game.applyMove(from.row, from.col, to.row, to.col, move, {
+                promoteTo: promotion || null,
+                fromRemote: true
+            });
         }
     }
 
@@ -284,6 +285,7 @@ class OnlineManager {
     // ========================================
     handleOpponentResign() {
         const winner = this.playerColor === 'white' ? 'Trắng' : 'Đen';
+        this.game.endCurrentGame('resign', this.playerColor);
         this.game.showGameOver(`${this.opponentName} đã đầu hàng!`, `${winner} thắng!`);
     }
 
@@ -292,7 +294,9 @@ class OnlineManager {
     // ========================================
     resign() {
         this.send({ type: 'resign' });
-        const winner = this.playerColor === 'white' ? 'Đen' : 'Trắng';
+        const winnerColor = this.playerColor === 'white' ? 'black' : 'white';
+        const winner = winnerColor === 'white' ? 'Trắng' : 'Đen';
+        this.game.endCurrentGame('resign', winnerColor);
         this.game.showGameOver('Bạn đã đầu hàng!', `${winner} thắng!`);
     }
 

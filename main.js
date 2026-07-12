@@ -10,8 +10,11 @@ function createWindow() {
         minWidth: 800,
         minHeight: 700,
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false
+            // The app is plain HTML/JS and doesn't need Node APIs in the
+            // renderer - keep it sandboxed since it loads remote P2P code
+            nodeIntegration: false,
+            contextIsolation: true,
+            sandbox: true
         },
         autoHideMenuBar: true,
         backgroundColor: '#1a1a2e',

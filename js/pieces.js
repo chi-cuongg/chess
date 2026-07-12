@@ -219,3 +219,21 @@ function getPseudoLegalMoves(board, row, col, enPassantTarget = null, castlingRi
             return [];
     }
 }
+
+// Node.js export (for unit tests) - no effect in the browser
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        PIECES,
+        getPieceByCode,
+        isValidPosition,
+        getOpponentColor,
+        getPawnMoves,
+        getKnightMoves,
+        getSlidingMoves,
+        getRookMoves,
+        getBishopMoves,
+        getQueenMoves,
+        getKingMoves,
+        getPseudoLegalMoves
+    };
+}

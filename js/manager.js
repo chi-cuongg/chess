@@ -46,6 +46,15 @@ class GameManager {
     switchGame(type) {
         if (this.gameType === type) return;
 
+        // Online play only supports chess - block switching mid-game
+        if (window.onlineManager && window.onlineManager.isConnected) {
+            const selector = document.getElementById('game-type-selector');
+            if (selector) selector.value = this.gameType;
+            const status = document.getElementById('game-status');
+            if (status) status.textContent = 'Không thể đổi loại cờ khi đang chơi online!';
+            return;
+        }
+
         // Cleanup current game if needed
         const oldBoard = document.getElementById('chessboard');
         const newBoard = oldBoard.cloneNode(false); // Clone without children to be safe and clear listeners
@@ -99,10 +108,9 @@ class GameManager {
     }
 }
 
-// Global initialization
+// Global initialization.
+// Scripts load in order, and DOMContentLoaded handlers run in registration
+// order, so window.chessGame (created in game.js) already exists here.
 document.addEventListener('DOMContentLoaded', () => {
-    // Wait for other scripts to load
-    setTimeout(() => {
-        window.gameManager = new GameManager();
-    }, 200);
+    window.gameManager = new GameManager();
 });

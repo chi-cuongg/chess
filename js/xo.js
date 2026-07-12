@@ -18,9 +18,6 @@ class XOGame {
     }
 
     createBoard() {
-        // ... (unchanged, just omitting from replace block if possible, but replace_file needs contiguous)
-        // Wait, init calls createBoard. Let's just replace Init and HandleClick logic separately or carefully.
-        // Actually replacement chunk needs contiguous. Let's do Init first.
         const chessboard = document.getElementById('chessboard');
         chessboard.innerHTML = '';
         chessboard.className = 'xo-board';
@@ -53,6 +50,14 @@ class XOGame {
             this.isGameOver = true;
             this.updateStatus(`Người thắng: ${this.turn}!`);
             this.showGameOver(`Người chơi ${this.turn} thắng!`);
+            return;
+        }
+
+        // Check draw: board is full
+        if (this.history.length >= this.size * this.size) {
+            this.isGameOver = true;
+            this.updateStatus('Hòa - Bàn cờ đã đầy!');
+            this.showGameOver('Hòa! Bàn cờ đã đầy.');
             return;
         }
 
@@ -123,12 +128,6 @@ class XOGame {
             title.textContent = 'Kết thúc!';
             message.textContent = msg;
             modal.classList.add('show');
-
-            // Re-bind play again button specific to this instance if needed, 
-            // but Manager handles "New Game". 
-            // The modal's "Play Again" button might still be bound to ChessGame's internal logic 
-            // if we don't handle it globally or locally. 
-            // For now, let's just show the modal.
         }
     }
 
@@ -138,7 +137,10 @@ class XOGame {
     }
 
     undoMove() {
-        if (this.history.length === 0 || this.isGameOver) return;
+        if (this.history.length === 0) return;
+        if (this.isGameOver) {
+            document.getElementById('game-over-modal')?.classList.remove('show');
+        }
         const lastMove = this.history.pop();
         this.board[lastMove.r][lastMove.c] = null;
 

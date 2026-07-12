@@ -306,8 +306,8 @@ class ThemeSwitcher {
 document.addEventListener('DOMContentLoaded', () => {
     window.themeSwitcher = new ThemeSwitcher();
 
-    // Wait for game to initialize
-    setTimeout(() => {
+    // game.js's DOMContentLoaded handler runs first, so chessGame exists
+    {
         if (window.chessGame) {
             const game = window.chessGame;
             const originalRenderBoard = game.renderBoard.bind(game);
@@ -345,5 +345,5 @@ document.addEventListener('DOMContentLoaded', () => {
                 originalRenderBoard();
             };
         }
-    }, 500);
+    }
 });

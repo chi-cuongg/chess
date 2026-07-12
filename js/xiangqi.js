@@ -32,6 +32,10 @@ class XiangqiGame {
     init() {
         this.createBoard();
         this.history = []; // Track history
+        this.initBoardSetup();
+        this.turn = 'red';
+        this.selectedSquare = null;
+        this.isGameOver = false;
         this.renderBoard();
         this.updateStatus('Lượt: Đỏ');
     }
@@ -111,9 +115,9 @@ class XiangqiGame {
     }
 
     handleSquareClick(row, col) {
-        // Basic selection logic (stub)
+        if (this.isGameOver) return;
+
         const pieceCode = this.board[row][col];
-        console.log(`Clicked ${row},${col}: ${pieceCode}`);
 
         if (this.selectedSquare) {
             // Move logic
@@ -142,12 +146,12 @@ class XiangqiGame {
                     this.board[row][col] = targetPiece;
 
                     if (isSelfCheck) {
-                        alert("Nước đi không hợp lệ: Tướng đang bị chiếu!");
+                        this.flashStatus('Nước đi không hợp lệ: Tướng đang bị chiếu!');
                         return;
                     }
 
                     if (isFlyingGen) {
-                        alert("Lỗi: Hai tướng không được đối mặt (Lộ mặt tướng)!");
+                        this.flashStatus('Nước đi không hợp lệ: Hai tướng không được đối mặt!');
                         return;
                     }
 
@@ -164,16 +168,33 @@ class XiangqiGame {
                     this.board[fromR][fromC] = null;
 
                     this.selectedSquare = null;
+                    const mover = this.turn;
                     this.turn = this.turn === 'red' ? 'black' : 'red';
 
-                    // 3. Check if Opponent is in Check
-                    if (this.isCheck(this.turn)) {
+                    this.renderBoard();
+                    this.clearHighlights();
+
+                    // 3. Check game end: opponent has no legal move left
+                    const inCheck = this.isCheck(this.turn);
+                    if (!this.hasAnyLegalMove(this.turn)) {
+                        this.isGameOver = true;
+                        const winnerText = mover === 'red' ? 'Đỏ' : 'Đen';
+                        if (inCheck) {
+                            this.updateStatus(`Chiếu bí! ${winnerText} thắng!`);
+                            this.showGameOver(`Chiếu bí! ${winnerText} thắng!`);
+                        } else {
+                            // In xiangqi, the stalemated side loses
+                            this.updateStatus(`Hết nước đi! ${winnerText} thắng!`);
+                            this.showGameOver(`Hết nước đi! ${winnerText} thắng!`);
+                        }
+                        return;
+                    }
+
+                    if (inCheck) {
                         this.showCheckAnimation();
                     }
 
-                    this.renderBoard();
                     this.updateStatus(`Lượt: ${this.turn === 'red' ? 'Đỏ' : 'Đen'}`);
-                    this.clearHighlights();
                 } else {
                     this.selectedSquare = null;
                     this.clearHighlights();
@@ -209,8 +230,69 @@ class XiangqiGame {
         if (status) status.textContent = msg;
     }
 
+    // Briefly show a warning in the status bar, then restore the turn text
+    flashStatus(msg) {
+        const status = document.getElementById('game-status');
+        if (!status) return;
+        status.textContent = msg;
+        status.style.color = 'red';
+        setTimeout(() => {
+            status.style.color = '';
+            if (!this.isGameOver) {
+                status.textContent = `Lượt: ${this.turn === 'red' ? 'Đỏ' : 'Đen'}`;
+            }
+        }, 1500);
+    }
+
+    showGameOver(msg) {
+        const modal = document.getElementById('game-over-modal');
+        const message = document.getElementById('game-over-message');
+        const title = document.getElementById('game-over-title');
+
+        if (modal && message && title) {
+            title.textContent = 'Kết thúc!';
+            message.textContent = msg;
+            modal.classList.add('show');
+        }
+    }
+
+    // A move is fully legal if valid, doesn't leave own general in check
+    // and doesn't expose the flying-general position
+    isLegalMoveFull(fromR, fromC, toR, toC) {
+        if (!this.isValidMove(fromR, fromC, toR, toC)) return false;
+
+        const fromPiece = this.board[fromR][fromC];
+        const targetPiece = this.board[toR][toC];
+        const color = this.pieces[fromPiece].color;
+
+        this.board[toR][toC] = fromPiece;
+        this.board[fromR][fromC] = null;
+        const illegal = this.isCheck(color) || this.isFlyingGeneral();
+        this.board[fromR][fromC] = fromPiece;
+        this.board[toR][toC] = targetPiece;
+
+        return !illegal;
+    }
+
+    hasAnyLegalMove(color) {
+        for (let r = 0; r < 10; r++) {
+            for (let c = 0; c < 9; c++) {
+                const code = this.board[r][c];
+                if (!code || this.pieces[code].color !== color) continue;
+                for (let tr = 0; tr < 10; tr++) {
+                    for (let tc = 0; tc < 9; tc++) {
+                        if (tr === r && tc === c) continue;
+                        if (this.isLegalMoveFull(r, c, tr, tc)) return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     newGame() {
         this.init();
+        document.getElementById('game-over-modal')?.classList.remove('show');
     }
 
     undoMove() {
@@ -226,6 +308,8 @@ class XiangqiGame {
         // Restore turn
         this.turn = turn;
         this.selectedSquare = null;
+        this.isGameOver = false;
+        document.getElementById('game-over-modal')?.classList.remove('show');
 
         // Render
         this.renderBoard();

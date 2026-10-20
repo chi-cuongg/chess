@@ -107,7 +107,7 @@ class GameHistory {
     }
 
     // ========================================
-    // Convert to PGN Format
+    // Convert to PGN Format (Standard Algebraic Notation)
     // ========================================
     toPGN(game) {
         const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
@@ -119,24 +119,121 @@ class GameHistory {
         pgn += `[Event "Chess Master Game"]\n`;
         pgn += `[Date "${new Date(game.date).toISOString().split('T')[0]}"]\n`;
         pgn += `[White "Player"]\n`;
-        pgn += `[Black "${game.opponent}"]\n`;
+        pgn += `[Black "${this.escapePgn(game.opponent)}"]\n`;
         pgn += `[Result "${this.getResultString(game)}"]\n\n`;
 
-        // Moves
-        game.moves.forEach((move, index) => {
+        // Replay the moves to build proper SAN, which requires knowing the
+        // legal moves at each position (for disambiguation, check, mate, ...).
+        let board = [
+            ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+            ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+            [null, null, null, null, null, null, null, null],
+            [null, null, null, null, null, null, null, null],
+            [null, null, null, null, null, null, null, null],
+            [null, null, null, null, null, null, null, null],
+            ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+            ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+        ];
+        let enPassant = null;
+        let rights = {
+            whiteKingside: true, whiteQueenside: true,
+            blackKingside: true, blackQueenside: true
+        };
+
+        let moveText = '';
+
+        game.moves.forEach((m, index) => {
+            const legal = getLegalMoves(board, m.from.row, m.from.col, enPassant, rights);
+            const mv = legal.find(x => x.row === m.to.row && x.col === m.to.col);
+            if (!mv) return;
+
+            const piece = board[m.from.row][m.from.col];
+            const san = this.moveToSAN(board, m.from, m.to, piece, mv, enPassant, rights);
+
             if (index % 2 === 0) {
-                pgn += `${Math.floor(index / 2) + 1}. `;
+                moveText += `${Math.floor(index / 2) + 1}. `;
             }
+            moveText += san + ' ';
 
-            const fromSquare = files[move.from.col] + ranks[move.from.row];
-            const toSquare = files[move.to.col] + ranks[move.to.row];
-
-            pgn += `${fromSquare}-${toSquare} `;
+            board = makeMoveCopy(board, m.from.row, m.from.col, m.to.row, m.to.col, mv.type, mv.promoteTo);
+            enPassant = computeEnPassantTarget(m.from, m.to, mv.type);
+            rights = computeCastlingRights(rights, m.from.row, m.from.col, m.to.row, m.to.col);
         });
 
-        pgn += this.getResultString(game);
+        pgn += moveText.trim() + ' ' + this.getResultString(game);
 
         return pgn;
+    }
+
+    moveToSAN(board, from, to, piece, mv, enPassant, rights) {
+        const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+        const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+        const pieceInfo = getPieceByCode(piece);
+        const color = pieceInfo.color;
+        const type = piece.toUpperCase();
+        const isCapture = !!board[to.row][to.col] || mv.type === 'enpassant';
+
+        let san = '';
+
+        if (mv.type === 'castling') {
+            return to.col === 6 ? 'O-O' : 'O-O-O';
+        }
+
+        if (type === 'P') {
+            if (isCapture) san += files[from.col] + 'x';
+            san += files[to.col] + ranks[to.row];
+            if (mv.type === 'promotion') san += '=' + (mv.promoteTo || 'Q').toUpperCase();
+        } else {
+            san += type;
+
+            // Disambiguation: are other pieces of the same type able to reach
+            // the same target square?
+            const others = [];
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (r === from.row && c === from.col) continue;
+                    const p = board[r][c];
+                    if (!p) continue;
+                    const info = getPieceByCode(p);
+                    if (info.color !== color || p.toUpperCase() !== type) continue;
+                    const lm = getLegalMoves(board, r, c, enPassant, rights);
+                    if (lm.some(x => x.row === to.row && x.col === to.col)) {
+                        others.push({ row: r, col: c });
+                    }
+                }
+            }
+            if (others.length > 0) {
+                const sameFile = others.some(o => o.col === from.col);
+                const sameRank = others.some(o => o.row === from.row);
+                if (!sameFile) san += files[from.col];
+                else if (!sameRank) san += ranks[from.row];
+                else san += files[from.col] + ranks[from.row];
+            }
+
+            if (isCapture) san += 'x';
+            san += files[to.col] + ranks[to.row];
+        }
+
+        // Check / checkmate suffix
+        const newBoard = makeMoveCopy(board, from.row, from.col, to.row, to.col, mv.type, mv.promoteTo);
+        const newEnPassant = computeEnPassantTarget(from, to, mv.type);
+        const newRights = computeCastlingRights(rights, from.row, from.col, to.row, to.col);
+        const opponent = getOpponentColor(color);
+        if (isInCheck(newBoard, opponent)) {
+            san += isCheckmate(newBoard, opponent, newEnPassant, newRights) ? '#' : '+';
+        }
+
+        return san;
+    }
+
+    escapePgn(text) {
+        return String(text == null ? '' : text).replace(/[\\"]/g, '\\$&');
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text == null ? '' : text;
+        return div.innerHTML;
     }
 
     getResultString(game) {
@@ -170,7 +267,7 @@ class GameHistory {
             <div class="history-item" data-id="${game.id}">
                 <div class="history-info">
                     <div class="history-date">${new Date(game.date).toLocaleDateString('vi-VN')}</div>
-                    <div class="history-opponent">vs ${game.opponent}</div>
+                    <div class="history-opponent">vs ${this.escapeHtml(game.opponent)}</div>
                     <div class="history-result ${game.winner === 'white' ? 'win' : game.winner === 'black' ? 'loss' : 'draw'}">
                         ${this.getResultText(game)}
                     </div>

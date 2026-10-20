@@ -86,14 +86,14 @@ function getCastlingMoves(board, color, castlingRights) {
     if (!castlingRights) return moves;
 
     const row = color === 'white' ? 7 : 0;
-    const kingCol = 4;
+    const rook = color === 'white' ? 'R' : 'r';
 
     // Can't castle if in check
     if (isInCheck(board, color)) return moves;
 
-    // Kingside castling
+    // Kingside castling (rook must actually be on h-file)
     const kingsideRight = color === 'white' ? castlingRights.whiteKingside : castlingRights.blackKingside;
-    if (kingsideRight) {
+    if (kingsideRight && board[row][7] === rook) {
         // Check if squares between king and rook are empty
         if (!board[row][5] && !board[row][6]) {
             // Check if king doesn't pass through or end up in check
@@ -104,9 +104,9 @@ function getCastlingMoves(board, color, castlingRights) {
         }
     }
 
-    // Queenside castling
+    // Queenside castling (rook must actually be on a-file)
     const queensideRight = color === 'white' ? castlingRights.whiteQueenside : castlingRights.blackQueenside;
-    if (queensideRight) {
+    if (queensideRight && board[row][0] === rook) {
         // Check if squares between king and rook are empty
         if (!board[row][1] && !board[row][2] && !board[row][3]) {
             // Check if king doesn't pass through or end up in check
@@ -144,6 +144,43 @@ function getLegalMoves(board, row, col, enPassantTarget = null, castlingRights =
     });
 
     return legalMoves;
+}
+
+// Return a new castling-rights object after a move (pure, non-mutating).
+// Used by the AI search and by board replay so rights stay correct.
+function computeCastlingRights(rights, fromRow, fromCol, toRow, toCol) {
+    const r = {
+        whiteKingside: rights.whiteKingside,
+        whiteQueenside: rights.whiteQueenside,
+        blackKingside: rights.blackKingside,
+        blackQueenside: rights.blackQueenside
+    };
+
+    // King moved
+    if (fromRow === 7 && fromCol === 4) { r.whiteKingside = false; r.whiteQueenside = false; }
+    if (fromRow === 0 && fromCol === 4) { r.blackKingside = false; r.blackQueenside = false; }
+
+    // Rook moved
+    if (fromRow === 7 && fromCol === 0) r.whiteQueenside = false;
+    if (fromRow === 7 && fromCol === 7) r.whiteKingside = false;
+    if (fromRow === 0 && fromCol === 0) r.blackQueenside = false;
+    if (fromRow === 0 && fromCol === 7) r.blackKingside = false;
+
+    // Rook captured
+    if (toRow === 7 && toCol === 0) r.whiteQueenside = false;
+    if (toRow === 7 && toCol === 7) r.whiteKingside = false;
+    if (toRow === 0 && toCol === 0) r.blackQueenside = false;
+    if (toRow === 0 && toCol === 7) r.blackKingside = false;
+
+    return r;
+}
+
+// Return the en passant target square after a move (pure).
+function computeEnPassantTarget(from, to, moveType) {
+    if (moveType === 'double') {
+        return { row: (from.row + to.row) / 2, col: to.col };
+    }
+    return null;
 }
 
 // Check if game is checkmate

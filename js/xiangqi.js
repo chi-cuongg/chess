@@ -30,8 +30,12 @@ class XiangqiGame {
     }
 
     init() {
-        this.createBoard();
+        this.initBoardSetup();
+        this.turn = 'red';
+        this.selectedSquare = null;
+        this.isGameOver = false;
         this.history = []; // Track history
+        this.createBoard();
         this.renderBoard();
         this.updateStatus('Lượt: Đỏ');
     }
@@ -111,9 +115,9 @@ class XiangqiGame {
     }
 
     handleSquareClick(row, col) {
-        // Basic selection logic (stub)
+        if (this.isGameOver) return;
+
         const pieceCode = this.board[row][col];
-        console.log(`Clicked ${row},${col}: ${pieceCode}`);
 
         if (this.selectedSquare) {
             // Move logic
@@ -166,14 +170,11 @@ class XiangqiGame {
                     this.selectedSquare = null;
                     this.turn = this.turn === 'red' ? 'black' : 'red';
 
-                    // 3. Check if Opponent is in Check
-                    if (this.isCheck(this.turn)) {
-                        this.showCheckAnimation();
-                    }
-
                     this.renderBoard();
-                    this.updateStatus(`Lượt: ${this.turn === 'red' ? 'Đỏ' : 'Đen'}`);
                     this.clearHighlights();
+
+                    // 3. Check for check / checkmate / stalemate
+                    this.checkGameState();
                 } else {
                     this.selectedSquare = null;
                     this.clearHighlights();
@@ -195,13 +196,82 @@ class XiangqiGame {
     highlightSquare(row, col) {
         this.clearHighlights();
         const squares = document.querySelectorAll('.xiangqi-board .square');
-        squares[row * 9 + col].style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
+        const square = squares[row * 9 + col];
+        if (square) square.classList.add('selected');
     }
 
     clearHighlights() {
-        document.querySelectorAll('.xiangqi-board .square').forEach(sq => {
-            sq.style.backgroundColor = 'transparent';
+        document.querySelectorAll('.xiangqi-board .square.selected').forEach(sq => {
+            sq.classList.remove('selected');
         });
+    }
+
+    // ========================================
+    // Game state: check, checkmate, stalemate
+    // ========================================
+    checkGameState() {
+        const color = this.turn;
+        const inCheck = this.isCheck(color);
+
+        if (!this.hasAnyLegalMove(color)) {
+            this.isGameOver = true;
+            if (inCheck) {
+                const winner = color === 'red' ? 'Đen' : 'Đỏ';
+                this.updateStatus(`Chiếu bí! ${winner} thắng!`);
+                this.showGameOver(`Chiếu bí! ${winner} thắng!`);
+            } else {
+                this.updateStatus('Hòa - Hết nước đi!');
+                this.showGameOver('Hòa! Hết nước đi (Stalemate)');
+            }
+            return;
+        }
+
+        if (inCheck) {
+            this.updateStatus(`${color === 'red' ? 'Đỏ' : 'Đen'} bị chiếu!`);
+            this.showCheckAnimation();
+        } else {
+            this.updateStatus(`Lượt: ${color === 'red' ? 'Đỏ' : 'Đen'}`);
+        }
+    }
+
+    // Does the given side have at least one legal move (not leaving its own
+    // general in check and not exposing a flying-general situation)?
+    hasAnyLegalMove(color) {
+        for (let r = 0; r < 10; r++) {
+            for (let c = 0; c < 9; c++) {
+                const code = this.board[r][c];
+                if (!code || this.pieces[code].color !== color) continue;
+
+                for (let tr = 0; tr < 10; tr++) {
+                    for (let tc = 0; tc < 9; tc++) {
+                        if (r === tr && c === tc) continue;
+                        if (!this.isValidMove(r, c, tr, tc)) continue;
+
+                        const fromPiece = this.board[r][c];
+                        const target = this.board[tr][tc];
+                        this.board[tr][tc] = fromPiece;
+                        this.board[r][c] = null;
+                        const illegal = this.isCheck(color) || this.isFlyingGeneral();
+                        this.board[r][c] = fromPiece;
+                        this.board[tr][tc] = target;
+
+                        if (!illegal) return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    showGameOver(msg) {
+        const modal = document.getElementById('game-over-modal');
+        const message = document.getElementById('game-over-message');
+        const title = document.getElementById('game-over-title');
+        if (modal && message && title) {
+            title.textContent = 'Kết thúc!';
+            message.textContent = msg;
+            modal.classList.add('show');
+        }
     }
 
     updateStatus(msg) {

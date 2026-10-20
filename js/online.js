@@ -14,6 +14,7 @@ class OnlineManager {
         this.playerColor = 'white';
         this.isConnected = false;
         this.chatManager = null;
+        this.applyingRemoteMove = false;
 
         this.init();
     }
@@ -204,8 +205,12 @@ class OnlineManager {
                 // Sync game state (for guest joining)
                 this.game.board = data.board;
                 this.game.currentTurn = data.turn;
+                this.game.moveHistory = [];
+                this.game.capturedPieces = { white: [], black: [] };
+                this.game.lastMove = null;
+                this.game.isGameOver = false;
                 this.game.renderBoard();
-                this.game.updateTurnIndicator();
+                this.game.updateUI();
                 break;
 
             case 'move':
@@ -259,15 +264,29 @@ class OnlineManager {
         // Get valid moves for the piece
         const validMoves = this.game.getValidMoves(from.row, from.col);
         const move = validMoves.find(m => m.row === to.row && m.col === to.col);
+        if (!move) return;
 
-        if (move) {
+        // Mark this as a remote move so the game does not echo it back.
+        this.applyingRemoteMove = true;
+        try {
             // Handle promotion
             if (promotion) {
-                this.game.pendingPromotion = { from, to };
-                this.game.promotePawn(promotion);
+                const movingPiece = this.game.board[from.row][from.col];
+                const pieceInfo = getPieceByCode(movingPiece);
+                this.game.pendingPromotion = {
+                    fromRow: from.row,
+                    fromCol: from.col,
+                    toRow: to.row,
+                    toCol: to.col,
+                    move,
+                    color: pieceInfo.color
+                };
+                this.game.completePromotion(promotion);
             } else {
                 this.game.makeMove(from.row, from.col, to.row, to.col, move);
             }
+        } finally {
+            this.applyingRemoteMove = false;
         }
     }
 
@@ -283,8 +302,9 @@ class OnlineManager {
     // Handle Opponent Resign
     // ========================================
     handleOpponentResign() {
-        const winner = this.playerColor === 'white' ? 'Trắng' : 'Đen';
-        this.game.showGameOver(`${this.opponentName} đã đầu hàng!`, `${winner} thắng!`);
+        const winner = this.playerColor;
+        const winnerLabel = winner === 'white' ? 'Trắng' : 'Đen';
+        this.game.endGame('resign', winner, `${this.opponentName} đã đầu hàng!`, `${winnerLabel} thắng!`);
     }
 
     // ========================================
@@ -292,8 +312,9 @@ class OnlineManager {
     // ========================================
     resign() {
         this.send({ type: 'resign' });
-        const winner = this.playerColor === 'white' ? 'Đen' : 'Trắng';
-        this.game.showGameOver('Bạn đã đầu hàng!', `${winner} thắng!`);
+        const winner = this.playerColor === 'white' ? 'black' : 'white';
+        const winnerLabel = winner === 'white' ? 'Trắng' : 'Đen';
+        this.game.endGame('resign', winner, 'Bạn đã đầu hàng!', `${winnerLabel} thắng!`);
     }
 
     // ========================================
@@ -358,6 +379,12 @@ class OnlineManager {
         const playerInfoPanel = document.getElementById('player-info-panel');
         if (playerInfoPanel) {
             playerInfoPanel.style.display = 'block';
+        }
+
+        // Show online actions (resign / new game)
+        const onlineActions = document.getElementById('online-actions');
+        if (onlineActions) {
+            onlineActions.style.display = 'flex';
         }
 
         // Show chat

@@ -63,6 +63,17 @@ class ThemeSwitcher {
     }
 
     // ========================================
+    // Show the current theme's effect centred on a board square
+    // ========================================
+    showEffectAtSquare(row, col) {
+        if (row === undefined || col === undefined) return;
+        const square = document.querySelector(`.chessboard .square[data-row="${row}"][data-col="${col}"]`);
+        if (!square) return;
+        const rect = square.getBoundingClientRect();
+        this.showCaptureEffect(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    }
+
+    // ========================================
     // Main Capture Effect Handler
     // ========================================
     showCaptureEffect(x, y) {
@@ -301,49 +312,39 @@ class ThemeSwitcher {
 }
 
 // ========================================
-// Hook into game to detect captures
+// Hook into the game to detect real captures
 // ========================================
 document.addEventListener('DOMContentLoaded', () => {
     window.themeSwitcher = new ThemeSwitcher();
 
-    // Wait for game to initialize
-    setTimeout(() => {
-        if (window.chessGame) {
-            const game = window.chessGame;
-            const originalRenderBoard = game.renderBoard.bind(game);
+    const game = window.chessGame;
+    if (!game) return;
 
-            let lastBoardState = null;
-
-            game.renderBoard = function () {
-                const currentBoard = this.board;
-
-                // Check for captures
-                if (lastBoardState) {
-                    for (let row = 0; row < 8; row++) {
-                        for (let col = 0; col < 8; col++) {
-                            const wasPiece = lastBoardState[row][col];
-                            const isPiece = currentBoard[row][col];
-
-                            // A capture occurred
-                            if (wasPiece && isPiece && wasPiece !== isPiece) {
-                                const squares = document.querySelectorAll('.square');
-                                const squareIndex = row * 8 + col;
-                                const square = squares[squareIndex];
-                                if (square) {
-                                    const rect = square.getBoundingClientRect();
-                                    window.themeSwitcher.showCaptureEffect(
-                                        rect.left + rect.width / 2,
-                                        rect.top + rect.height / 2
-                                    );
-                                }
-                            }
-                        }
-                    }
-                }
-
-                lastBoardState = currentBoard.map(row => [...row]);
-                originalRenderBoard();
-            };
+    // Show the capture effect only when a capture actually happens, by hooking
+    // the move methods instead of diffing boards (which produced false
+    // positives on new game / undo).
+    const originalMakeMove = game.makeMove.bind(game);
+    game.makeMove = function (fromRow, fromCol, toRow, toCol, move) {
+        const target = this.board[toRow][toCol];
+        const result = originalMakeMove(fromRow, fromCol, toRow, toCol, move);
+        const isEnPassant = move && move.type === 'enpassant';
+        const isPromotion = move && move.type === 'promotion';
+        if (!this.isReplaying && !isPromotion && (target || isEnPassant)) {
+            window.themeSwitcher.showEffectAtSquare(toRow, toCol);
         }
-    }, 500);
+        return result;
+    };
+
+    const originalCompletePromotion = game.completePromotion.bind(game);
+    game.completePromotion = function (promoteTo) {
+        const pending = this.pendingPromotion;
+        const captured = pending ? this.board[pending.toRow][pending.toCol] : null;
+        const row = pending ? pending.toRow : 0;
+        const col = pending ? pending.toCol : 0;
+        const result = originalCompletePromotion(promoteTo);
+        if (!this.isReplaying && captured) {
+            window.themeSwitcher.showEffectAtSquare(row, col);
+        }
+        return result;
+    };
 });

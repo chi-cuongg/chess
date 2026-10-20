@@ -18,9 +18,6 @@ class XOGame {
     }
 
     createBoard() {
-        // ... (unchanged, just omitting from replace block if possible, but replace_file needs contiguous)
-        // Wait, init calls createBoard. Let's just replace Init and HandleClick logic separately or carefully.
-        // Actually replacement chunk needs contiguous. Let's do Init first.
         const chessboard = document.getElementById('chessboard');
         chessboard.innerHTML = '';
         chessboard.className = 'xo-board';
@@ -53,6 +50,14 @@ class XOGame {
             this.isGameOver = true;
             this.updateStatus(`Người thắng: ${this.turn}!`);
             this.showGameOver(`Người chơi ${this.turn} thắng!`);
+            return;
+        }
+
+        // Draw: board full with no winner
+        if (this.history.length === this.size * this.size) {
+            this.isGameOver = true;
+            this.updateStatus('Hòa - Bàn cờ đã đầy!');
+            this.showGameOver('Hòa! Bàn cờ đã đầy');
             return;
         }
 

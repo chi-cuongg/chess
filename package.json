@@ -2,10 +2,12 @@
   "name": "chess-game",
   "version": "1.0.0",
   "description": "Ứng dụng chơi cờ vua trên Windows",
-  "main": "index.html",
+  "main": "main.js",
   "scripts": {
     "start": "live-server --port=3000 --open=/index.html",
-    "electron": "electron ."
+    "electron": "electron .",
+    "test": "node test/chess.test.js",
+    "lint": "node test/lint.js"
   },
   "author": "",
   "license": "MIT",

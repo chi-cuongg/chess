@@ -94,9 +94,9 @@ class ChatManager {
         });
 
         msgEl.innerHTML = `
-            <div class="chat-sender">${message.sender}</div>
+            <div class="chat-sender">${this.escapeHtml(message.sender)}</div>
             <div class="chat-text">${this.escapeHtml(message.text)}</div>
-            <div class="chat-time">${time}</div>
+            <div class="chat-time">${this.escapeHtml(time)}</div>
         `;
 
         this.chatContainer.appendChild(msgEl);
@@ -113,7 +113,7 @@ class ChatManager {
 
         const msgEl = document.createElement('div');
         msgEl.className = 'chat-message system';
-        msgEl.innerHTML = `<div class="chat-text">${text}</div>`;
+        msgEl.innerHTML = `<div class="chat-text">${this.escapeHtml(text)}</div>`;
 
         this.chatContainer.appendChild(msgEl);
         this.chatContainer.scrollTop = this.chatContainer.scrollHeight;

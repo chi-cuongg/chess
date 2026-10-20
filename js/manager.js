@@ -99,10 +99,9 @@ class GameManager {
     }
 }
 
-// Global initialization
+// Global initialization.
+// game.js registers its DOMContentLoaded listener first and creates
+// window.chessGame, so it is guaranteed to exist by the time this runs.
 document.addEventListener('DOMContentLoaded', () => {
-    // Wait for other scripts to load
-    setTimeout(() => {
-        window.gameManager = new GameManager();
-    }, 200);
+    window.gameManager = new GameManager();
 });

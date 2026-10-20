@@ -31,6 +31,22 @@ class ChessGame {
         this.lastMove = null;
         this.pendingPromotion = null;
 
+        // Draw-rule tracking
+        this.halfmoveClock = 0;
+        this.positionCounts = {};
+
+        // Replay state
+        this.isReplaying = false;
+        this.replayTimer = null;
+
+        // AI worker state
+        this.aiWorker = null;
+        this.aiThinking = false;
+        this.aiWorkerDisabled = false;
+
+        // Guard so button listeners are only bound once
+        this._buttonsBound = false;
+
         this.init();
     }
 
@@ -56,14 +72,19 @@ class ChessGame {
     }
 
     setupEventListeners() {
+        // The board element can be replaced when switching game types, so the
+        // click handler must be (re)bound on every init. Button handlers live on
+        // stable elements and must only be bound once to avoid duplicates.
         const chessboard = document.getElementById('chessboard');
         chessboard.addEventListener('click', (e) => this.handleSquareClick(e));
 
-        document.getElementById('play-ai-btn').addEventListener('click', () => this.toggleAI());
+        if (this._buttonsBound) return;
+        this._buttonsBound = true;
 
+        document.getElementById('play-ai-btn')?.addEventListener('click', () => this.toggleAI());
 
         // Promotion piece selection
-        document.getElementById('promotion-pieces').addEventListener('click', (e) => {
+        document.getElementById('promotion-pieces')?.addEventListener('click', (e) => {
             const piece = e.target.closest('.piece');
             if (piece && this.pendingPromotion) {
                 const promoteTo = piece.dataset.piece;
@@ -73,6 +94,7 @@ class ChessGame {
     }
 
     newGame() {
+        this.stopReplay();
         this.board = this.initialBoard.map(row => [...row]);
         this.currentTurn = 'white';
         this.selectedSquare = null;
@@ -89,14 +111,73 @@ class ChessGame {
         this.isGameOver = false;
         this.lastMove = null;
         this.pendingPromotion = null;
+        this.halfmoveClock = 0;
+        this.positionCounts = {};
+        this.recordPosition();
 
         this.renderBoard();
         this.updateUI();
         this.updateStatus('Sẵn sàng bắt đầu!');
+
+        // Start a fresh history record (only if the history manager is loaded)
+        if (window.gameHistory) {
+            window.gameHistory.startGame(this.getGameMode(), this.getOpponentLabel());
+        }
+    }
+
+    getGameMode() {
+        if (window.onlineManager && window.onlineManager.isConnected) return 'online';
+        if (this.playingAgainstAI) return 'ai';
+        return 'local';
+    }
+
+    getOpponentLabel() {
+        if (window.onlineManager && window.onlineManager.isConnected) {
+            return window.onlineManager.opponentName || 'Đối thủ';
+        }
+        return this.playingAgainstAI ? 'AI' : 'Người chơi';
+    }
+
+    // Ensure a history record exists before recording a move. This covers the
+    // case where the game was created before the history manager finished
+    // loading (see index.html bootstrap).
+    ensureHistory() {
+        if (!window.gameHistory) return false;
+        if (!window.gameHistory.currentGame) {
+            window.gameHistory.startGame(this.getGameMode(), this.getOpponentLabel());
+        }
+        return true;
+    }
+
+    // ========================================
+    // Draw-rule tracking (50-move & threefold repetition)
+    // ========================================
+    getPositionKey() {
+        return JSON.stringify(this.board) + this.currentTurn +
+            JSON.stringify(this.castlingRights) + JSON.stringify(this.enPassantTarget);
+    }
+
+    recordPosition() {
+        const key = this.getPositionKey();
+        this.positionCounts[key] = (this.positionCounts[key] || 0) + 1;
+        return this.positionCounts[key];
+    }
+
+    isThreefoldRepetition() {
+        return Object.values(this.positionCounts).some(count => count >= 3);
+    }
+
+    isFiftyMoveRule() {
+        return this.halfmoveClock >= 100;
     }
 
     renderBoard() {
         const squares = document.querySelectorAll('.square');
+
+        // Compute check state a single time instead of once per square.
+        const inCheck = isInCheck(this.board, this.currentTurn);
+        const kingPos = inCheck ? findKing(this.board, this.currentTurn) : null;
+
         squares.forEach(square => {
             const row = parseInt(square.dataset.row);
             const col = parseInt(square.dataset.col);
@@ -124,11 +205,8 @@ class ChessGame {
             }
 
             // Highlight king in check
-            if (isInCheck(this.board, this.currentTurn)) {
-                const kingPos = findKing(this.board, this.currentTurn);
-                if (kingPos && row === kingPos.row && col === kingPos.col) {
-                    square.classList.add('check');
-                }
+            if (kingPos && row === kingPos.row && col === kingPos.col) {
+                square.classList.add('check');
             }
         });
 
@@ -136,6 +214,7 @@ class ChessGame {
     }
 
     handleSquareClick(e) {
+        if (this.isReplaying) return;
         if (this.isGameOver || this.pendingPromotion) return;
         if (this.playingAgainstAI && this.currentTurn === this.aiColor) return;
 
@@ -272,9 +351,17 @@ class ChessGame {
         // Store last move
         this.lastMove = { from: { row: fromRow, col: fromCol }, to: { row: toRow, col: toCol } };
 
+        // Update 50-move clock: reset on pawn move or capture, otherwise increase
+        if (piece.toUpperCase() === 'P' || capturedPiece || move.type === 'enpassant') {
+            this.halfmoveClock = 0;
+        } else {
+            this.halfmoveClock++;
+        }
+
         // Clear selection and switch turns
         this.clearSelection();
         this.currentTurn = getOpponentColor(this.currentTurn);
+        this.recordPosition();
 
         // Check game state
         this.checkGameState();
@@ -283,21 +370,17 @@ class ChessGame {
         this.renderBoard();
         this.updateUI();
 
-        // Online Sync
-        if (window.onlineManager && window.onlineManager.isConnected && this.currentTurn !== window.onlineManager.playerColor) {
-            // We just moved, so it's opponent's turn. We need to send the move we just made.
-            // Note: currentTurn has already been switched to opponent's color
-            window.onlineManager.sendMove(fromRow, fromCol, toRow, toCol);
+        // During replay we only update visuals, no network/history/AI side effects.
+        if (this.isReplaying) return;
 
-            // Record to history
-            if (window.gameHistory) {
-                window.gameHistory.recordMove({ row: fromRow, col: fromCol }, { row: toRow, col: toCol }, piece, capturedPiece, move.type);
-            }
+        // Record to history (regardless of mode: online or local)
+        if (this.ensureHistory()) {
+            window.gameHistory.recordMove({ row: fromRow, col: fromCol }, { row: toRow, col: toCol }, piece, capturedPiece, move.type);
         }
 
-        // Local History
-        if (window.gameHistory && !window.onlineManager?.isConnected) {
-            window.gameHistory.recordMove({ row: fromRow, col: fromCol }, { row: toRow, col: toCol }, piece, capturedPiece, move.type);
+        // Online Sync: send only when this client is the one who made the move
+        if (window.onlineManager && window.onlineManager.isConnected) {
+            this.maybeSendOnlineMove(fromRow, fromCol, toRow, toCol);
         }
 
         // AI move
@@ -305,6 +388,14 @@ class ChessGame {
             this.updateStatus('AI đang suy nghĩ...');
             setTimeout(() => this.makeAIMove(), 500);
         }
+    }
+
+    // Send a move over the network only if it wasn't caused by applying an
+    // opponent's move (guards against echoing moves back to the sender).
+    maybeSendOnlineMove(fromRow, fromCol, toRow, toCol, promoteTo = null) {
+        if (!window.onlineManager || !window.onlineManager.isConnected) return;
+        if (window.onlineManager.applyingRemoteMove) return;
+        window.onlineManager.sendMove(fromRow, fromCol, toRow, toCol, promoteTo);
     }
 
     completePromotion(promoteTo) {
@@ -347,9 +438,13 @@ class ChessGame {
         this.hideModal('promotion-modal');
         this.pendingPromotion = null;
 
+        // Pawn move resets the 50-move clock
+        this.halfmoveClock = 0;
+
         // Clear selection and switch turns
         this.clearSelection();
         this.currentTurn = getOpponentColor(this.currentTurn);
+        this.recordPosition();
 
         // Check game state
         this.checkGameState();
@@ -358,23 +453,11 @@ class ChessGame {
         this.renderBoard();
         this.updateUI();
 
-        // Online Sync
-        if (window.onlineManager && window.onlineManager.isConnected && this.currentTurn !== window.onlineManager.playerColor) {
-            window.onlineManager.sendMove(fromRow, fromCol, toRow, toCol, promoteTo);
-            // Record to history
-            if (window.gameHistory) {
-                window.gameHistory.recordMove(
-                    { row: fromRow, col: fromCol },
-                    { row: toRow, col: toCol },
-                    piece,
-                    capturedPiece,
-                    'promotion'
-                );
-            }
-        }
+        // During replay we only update visuals, no network/history/AI side effects.
+        if (this.isReplaying) return;
 
-        // Local History
-        if (window.gameHistory && !window.onlineManager?.isConnected) {
+        // Record to history
+        if (this.ensureHistory()) {
             window.gameHistory.recordMove(
                 { row: fromRow, col: fromCol },
                 { row: toRow, col: toCol },
@@ -383,6 +466,9 @@ class ChessGame {
                 'promotion'
             );
         }
+
+        // Online Sync
+        this.maybeSendOnlineMove(fromRow, fromCol, toRow, toCol, promoteTo);
 
         // AI move
         if (this.playingAgainstAI && !this.isGameOver && this.currentTurn === this.aiColor) {
@@ -436,24 +522,28 @@ class ChessGame {
         const color = this.currentTurn;
 
         if (isCheckmate(this.board, color, this.enPassantTarget, this.castlingRights)) {
-            this.isGameOver = true;
             const winner = getOpponentColor(color);
-            this.showGameOver(`${winner === 'white' ? 'Trắng' : 'Đen'} thắng!`, 'Chiếu hết!');
-            this.updateStatus('Chiếu hết!', 'checkmate');
+            this.endGame('checkmate', winner, `${winner === 'white' ? 'Trắng' : 'Đen'} thắng!`, 'Chiếu hết!');
             return;
         }
 
         if (isStalemate(this.board, color, this.enPassantTarget, this.castlingRights)) {
-            this.isGameOver = true;
-            this.showGameOver('Hòa!', 'Hết nước đi (Stalemate)');
-            this.updateStatus('Hòa - Stalemate!');
+            this.endGame('stalemate', null, 'Hòa!', 'Hết nước đi (Stalemate)');
             return;
         }
 
         if (isInsufficientMaterial(this.board)) {
-            this.isGameOver = true;
-            this.showGameOver('Hòa!', 'Không đủ quân để chiếu hết');
-            this.updateStatus('Hòa - Không đủ quân!');
+            this.endGame('draw', null, 'Hòa!', 'Không đủ quân để chiếu hết');
+            return;
+        }
+
+        if (this.isThreefoldRepetition()) {
+            this.endGame('draw', null, 'Hòa!', 'Lặp lại thế cờ 3 lần');
+            return;
+        }
+
+        if (this.isFiftyMoveRule()) {
+            this.endGame('draw', null, 'Hòa!', 'Luật 50 nước đi');
             return;
         }
 
@@ -464,7 +554,18 @@ class ChessGame {
         }
     }
 
+    // Central place to finish a game: marks state, shows modal, saves history.
+    endGame(result, winner, title, message) {
+        this.isGameOver = true;
+        this.showGameOver(title, message);
+        this.updateStatus(result === 'checkmate' ? 'Chiếu hết!' : title, result === 'checkmate' ? 'checkmate' : '');
+        if (window.gameHistory && !this.isReplaying) {
+            window.gameHistory.endGame(result, winner);
+        }
+    }
+
     undoMove() {
+        if (this.isReplaying) return;
         if (this.moveHistory.length === 0) return;
         if (this.isGameOver) {
             this.isGameOver = false;
@@ -482,6 +583,12 @@ class ChessGame {
             this.lastMove = state.lastMove;
             this.currentTurn = getOpponentColor(this.currentTurn);
         }
+
+        // Rebuild draw-rule tracking for the restored position to avoid
+        // stale repetition counts / halfmove clock after undoing.
+        this.halfmoveClock = 0;
+        this.positionCounts = {};
+        this.recordPosition();
 
         this.clearSelection();
         this.renderBoard();
@@ -522,7 +629,36 @@ class ChessGame {
     }
 
     makeAIMove() {
-        if (this.isGameOver) return;
+        if (this.isGameOver || this.aiThinking) return;
+
+        // Prefer a Web Worker so the (potentially slow) search does not block
+        // the UI. Falls back to a synchronous search if workers are unavailable
+        // (e.g. some file:// contexts).
+        let worker = null;
+        try {
+            worker = this.getAIWorker();
+        } catch (e) {
+            worker = null;
+        }
+
+        if (worker) {
+            this.aiThinking = true;
+            const payload = {
+                board: this.board,
+                color: this.aiColor,
+                depth: this.aiDepth,
+                enPassantTarget: this.enPassantTarget,
+                castlingRights: this.castlingRights
+            };
+            const onMessage = (e) => {
+                worker.removeEventListener('message', onMessage);
+                this.aiThinking = false;
+                this.applyAIMove(e.data ? e.data.bestMove : null);
+            };
+            worker.addEventListener('message', onMessage);
+            worker.postMessage(payload);
+            return;
+        }
 
         const bestMove = findBestMove(
             this.board,
@@ -531,30 +667,61 @@ class ChessGame {
             this.enPassantTarget,
             this.castlingRights
         );
+        this.applyAIMove(bestMove);
+    }
 
-        if (bestMove) {
-            const moves = getLegalMoves(
-                this.board,
-                bestMove.from.row,
-                bestMove.from.col,
-                this.enPassantTarget,
-                this.castlingRights
-            );
-            const move = moves.find(m =>
-                m.row === bestMove.to.row &&
-                m.col === bestMove.to.col &&
-                (m.type === bestMove.type || (!m.promoteTo && !bestMove.promoteTo))
-            );
+    getAIWorker() {
+        if (this.aiWorker) return this.aiWorker;
+        if (this.aiWorkerDisabled || typeof Worker === 'undefined') return null;
 
-            if (move) {
-                // Handle promotion
-                if (move.type === 'promotion') {
-                    move.promoteTo = bestMove.promoteTo || 'Q';
-                    this.executeAIPromotion(bestMove.from.row, bestMove.from.col, bestMove.to.row, bestMove.to.col, move);
-                } else {
-                    this.makeMove(bestMove.from.row, bestMove.from.col, bestMove.to.row, bestMove.to.col, move);
+        try {
+            this.aiWorker = new Worker('js/ai-worker.js');
+        } catch (e) {
+            this.aiWorkerDisabled = true;
+            return null;
+        }
+
+        this.aiWorker.onerror = () => {
+            // Permanently disable the worker and fall back to a synchronous
+            // search (e.g. workers blocked in some file:// contexts).
+            try { this.aiWorker.terminate(); } catch (e) { /* ignore */ }
+            this.aiWorker = null;
+            this.aiWorkerDisabled = true;
+            if (this.aiThinking) {
+                this.aiThinking = false;
+                if (this.playingAgainstAI && !this.isGameOver && this.currentTurn === this.aiColor) {
+                    setTimeout(() => this.makeAIMove(), 0);
                 }
             }
+        };
+        return this.aiWorker;
+    }
+
+    applyAIMove(bestMove) {
+        if (!bestMove) return;
+        // Ignore stale results (e.g. game was reset while the worker searched).
+        if (!this.playingAgainstAI || this.isGameOver || this.currentTurn !== this.aiColor || this.isReplaying) return;
+
+        const moves = getLegalMoves(
+            this.board,
+            bestMove.from.row,
+            bestMove.from.col,
+            this.enPassantTarget,
+            this.castlingRights
+        );
+        const move = moves.find(m =>
+            m.row === bestMove.to.row &&
+            m.col === bestMove.to.col &&
+            (m.type === bestMove.type || (!m.promoteTo && !bestMove.promoteTo))
+        );
+        if (!move) return;
+
+        // Handle promotion
+        if (move.type === 'promotion') {
+            move.promoteTo = bestMove.promoteTo || 'Q';
+            this.executeAIPromotion(bestMove.from.row, bestMove.from.col, bestMove.to.row, bestMove.to.col, move);
+        } else {
+            this.makeMove(bestMove.from.row, bestMove.from.col, bestMove.to.row, bestMove.to.col, move);
         }
     }
 
@@ -589,11 +756,23 @@ class ChessGame {
 
         this.enPassantTarget = null;
         this.lastMove = { from: { row: fromRow, col: fromCol }, to: { row: toRow, col: toCol } };
+        this.halfmoveClock = 0;
 
         this.currentTurn = getOpponentColor(this.currentTurn);
+        this.recordPosition();
         this.checkGameState();
         this.renderBoard();
         this.updateUI();
+
+        if (!this.isReplaying && this.ensureHistory()) {
+            window.gameHistory.recordMove(
+                { row: fromRow, col: fromCol },
+                { row: toRow, col: toCol },
+                piece,
+                capturedPiece,
+                'promotion'
+            );
+        }
     }
 
     updateUI() {
@@ -660,6 +839,82 @@ class ChessGame {
 
         // Re-render to update pieces orientation (keeping them upright)
         this.renderBoard();
+    }
+
+    // ========================================
+    // Replay a saved game
+    // ========================================
+    buildReplaySnapshots(game) {
+        const snapshots = [];
+        let board = this.initialBoard.map(row => [...row]);
+        let enPassant = null;
+        let rights = {
+            whiteKingside: true, whiteQueenside: true,
+            blackKingside: true, blackQueenside: true
+        };
+
+        for (const m of game.moves) {
+            const legal = getLegalMoves(board, m.from.row, m.from.col, enPassant, rights);
+            const mv = legal.find(x => x.row === m.to.row && x.col === m.to.col);
+            if (!mv) break;
+
+            board = makeMoveCopy(board, m.from.row, m.from.col, m.to.row, m.to.col, mv.type, mv.promoteTo);
+            enPassant = computeEnPassantTarget(m.from, m.to, mv.type);
+            rights = computeCastlingRights(rights, m.from.row, m.from.col, m.to.row, m.to.col);
+            snapshots.push(board.map(row => [...row]));
+        }
+
+        return snapshots;
+    }
+
+    startReplay(game) {
+        this.stopReplay();
+        if (!game || !game.moves || game.moves.length === 0) return;
+
+        const snapshots = this.buildReplaySnapshots(game);
+        if (snapshots.length === 0) return;
+
+        document.getElementById('history-modal')?.classList.remove('show');
+
+        this.isReplaying = true;
+        this.replaySnapshots = snapshots;
+        this.replayIndex = -1;
+
+        // Reset visuals to the starting position without touching history.
+        this.board = this.initialBoard.map(row => [...row]);
+        this.currentTurn = 'white';
+        this.capturedPieces = { white: [], black: [] };
+        this.lastMove = null;
+        this.isGameOver = false;
+        this.clearSelection();
+        this.renderBoard();
+        this.updateUI();
+        this.updateStatus('▶ Đang phát lại ván đấu...');
+
+        this.replayTimer = setInterval(() => {
+            this.replayIndex++;
+            if (this.replayIndex >= this.replaySnapshots.length) {
+                this.stopReplay();
+                return;
+            }
+            this.board = this.replaySnapshots[this.replayIndex].map(row => [...row]);
+            // Moves alternate starting with white.
+            this.currentTurn = this.replayIndex % 2 === 0 ? 'black' : 'white';
+            this.renderBoard();
+            this.updateUI();
+        }, 700);
+    }
+
+    stopReplay() {
+        if (this.replayTimer) {
+            clearInterval(this.replayTimer);
+            this.replayTimer = null;
+        }
+        if (this.isReplaying) {
+            this.isReplaying = false;
+            this.updateStatus('Đã dừng phát lại.');
+        }
+        this.replayIndex = 0;
     }
 }
 

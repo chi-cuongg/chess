@@ -4,13 +4,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self' file:;
+        script-src 'self' file: https://unpkg.com;
+        style-src 'self' file: 'unsafe-inline' https://fonts.googleapis.com;
+        font-src 'self' file: https://fonts.gstatic.com;
+        img-src 'self' file: data:;
+        media-src 'self' file: blob:;
+        worker-src 'self' file: blob:;
+        connect-src 'self' file: https://0.peerjs.com wss://0.peerjs.com https://unpkg.com;
+        object-src 'none';
+        base-uri 'self';
+        form-action 'none';">
     <title>Cờ Vua - Chess Game</title>
     <link rel="stylesheet" href="styles.css">
     <link
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap"
         rel="stylesheet">
     <!-- PeerJS for P2P Connection -->
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"
+        integrity="sha384-PMNj1TmCgXfW24/rfIyxYSAWwj2mffkMfguUWv08iNFcy0kTC0JN7E/tE+pJ7+fa"
+        crossorigin="anonymous"></script>
 </head>
 
 <body>
@@ -40,6 +54,14 @@
                     <div id="player-info-panel" class="player-info" style="display: none;">
                         <div>👤 <span id="player-name"></span> <span id="player-color"></span></div>
                         <div>🎯 vs <span id="opponent-name">-</span></div>
+                    </div>
+                    <div id="online-actions" class="online-actions" style="display: none;">
+                        <button id="online-new-game-btn" class="btn btn-secondary">
+                            <span class="btn-icon">🔄</span> Ván mới
+                        </button>
+                        <button id="resign-btn" class="btn btn-danger">
+                            <span class="btn-icon">🏳️</span> Đầu hàng
+                        </button>
                     </div>
                 </div>
 
@@ -207,87 +229,7 @@
     <script src="js/xiangqi.js"></script>
     <script src="js/xo.js"></script>
     <script src="js/manager.js"></script>
-
-    <script>
-        // Initialize online features
-        document.addEventListener('DOMContentLoaded', () => {
-            // Wait for game to initialize
-            setTimeout(() => {
-                if (window.chessGame) {
-                    // Initialize Online Manager
-                    window.onlineManager = new OnlineManager(window.chessGame);
-
-                    // Initialize Chat Manager
-                    window.chatManager = new ChatManager(window.onlineManager);
-                    window.onlineManager.chatManager = window.chatManager;
-
-                    // Initialize Game History
-                    window.gameHistory = new GameHistory();
-
-                    // Create Room Button
-                    document.getElementById('create-room-btn').addEventListener('click', () => {
-                        const name = prompt('Nhập tên của bạn:', 'Player 1');
-                        if (name) {
-                            window.onlineManager.createRoom(name);
-                        }
-                    });
-
-                    // Join Room Button
-                    document.getElementById('join-room-btn').addEventListener('click', () => {
-                        const roomCode = document.getElementById('room-code-input').value.trim().toUpperCase();
-                        if (roomCode.length === 6) {
-                            const name = prompt('Nhập tên của bạn:', 'Player 2');
-                            if (name) {
-                                window.onlineManager.joinRoom(roomCode, name);
-                            }
-                        } else {
-                            alert('Mã phòng phải có 6 ký tự!');
-                        }
-                    });
-
-                    // Copy Link Button
-                    document.getElementById('copy-link-btn').addEventListener('click', () => {
-                        const linkInput = document.getElementById('share-link');
-                        navigator.clipboard.writeText(linkInput.value).then(() => {
-                            alert('Đã copy link!');
-                        });
-                    });
-
-                    // Copy Code Button
-                    document.getElementById('copy-code-btn')?.addEventListener('click', () => {
-                        const code = document.getElementById('room-code-text').textContent;
-                        navigator.clipboard.writeText(code).then(() => {
-                            alert('Đã copy mã phòng: ' + code);
-                        });
-                    });
-
-                    // Close Share Modal
-                    document.getElementById('close-share-btn').addEventListener('click', () => {
-                        document.getElementById('share-modal').classList.remove('show');
-                    });
-
-                    // History Button
-                    document.getElementById('history-btn').addEventListener('click', () => {
-                        window.gameHistory.renderHistoryModal();
-                        document.getElementById('history-modal').classList.add('show');
-                    });
-
-                    // Close History Modal
-                    document.getElementById('close-history-btn').addEventListener('click', () => {
-                        document.getElementById('history-modal').classList.remove('show');
-                    });
-
-                    // Clear History Button
-                    document.getElementById('clear-history-btn').addEventListener('click', () => {
-                        if (confirm('Xóa tất cả lịch sử ván đấu?')) {
-                            window.gameHistory.clearHistory();
-                            window.gameHistory.renderHistoryModal();
-                        }
-                    });
-                }
-            }, 100);
-        });
-    </script>
+    <script src="js/bootstrap.js"></script>
 </body>
 
 </html>

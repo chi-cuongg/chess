@@ -182,16 +182,11 @@ function minimax(board, depth, alpha, beta, isMaximizing, enPassantTarget, castl
                 move.promoteTo
             );
 
-            // Update en passant target
-            let newEnPassant = null;
-            if (move.type === 'double') {
-                newEnPassant = {
-                    row: (move.from.row + move.to.row) / 2,
-                    col: move.to.col
-                };
-            }
+            // Update en passant target and castling rights
+            const newEnPassant = computeEnPassantTarget(move.from, move.to, move.type);
+            const newCastling = computeCastlingRights(castlingRights, move.from.row, move.from.col, move.to.row, move.to.col);
 
-            const evaluation = minimax(newBoard, depth - 1, alpha, beta, false, newEnPassant, castlingRights);
+            const evaluation = minimax(newBoard, depth - 1, alpha, beta, false, newEnPassant, newCastling);
             maxEval = Math.max(maxEval, evaluation);
             alpha = Math.max(alpha, evaluation);
             if (beta <= alpha) break;
@@ -208,16 +203,11 @@ function minimax(board, depth, alpha, beta, isMaximizing, enPassantTarget, castl
                 move.promoteTo
             );
 
-            // Update en passant target
-            let newEnPassant = null;
-            if (move.type === 'double') {
-                newEnPassant = {
-                    row: (move.from.row + move.to.row) / 2,
-                    col: move.to.col
-                };
-            }
+            // Update en passant target and castling rights
+            const newEnPassant = computeEnPassantTarget(move.from, move.to, move.type);
+            const newCastling = computeCastlingRights(castlingRights, move.from.row, move.from.col, move.to.row, move.to.col);
 
-            const evaluation = minimax(newBoard, depth - 1, alpha, beta, true, newEnPassant, castlingRights);
+            const evaluation = minimax(newBoard, depth - 1, alpha, beta, true, newEnPassant, newCastling);
             minEval = Math.min(minEval, evaluation);
             beta = Math.min(beta, evaluation);
             if (beta <= alpha) break;
@@ -251,14 +241,9 @@ function findBestMove(board, color, depth, enPassantTarget, castlingRights) {
             move.promoteTo
         );
 
-        // Update en passant target
-        let newEnPassant = null;
-        if (move.type === 'double') {
-            newEnPassant = {
-                row: (move.from.row + move.to.row) / 2,
-                col: move.to.col
-            };
-        }
+        // Update en passant target and castling rights
+        const newEnPassant = computeEnPassantTarget(move.from, move.to, move.type);
+        const newCastling = computeCastlingRights(castlingRights, move.from.row, move.from.col, move.to.row, move.to.col);
 
         const evaluation = minimax(
             newBoard,
@@ -267,7 +252,7 @@ function findBestMove(board, color, depth, enPassantTarget, castlingRights) {
             Infinity,
             !isMaximizing,
             newEnPassant,
-            castlingRights
+            newCastling
         );
 
         if (isMaximizing) {
@@ -293,7 +278,9 @@ function findBestMove(board, color, depth, enPassantTarget, castlingRights) {
                 move.type,
                 move.promoteTo
             );
-            const evaluation = minimax(newBoard, depth - 1, -Infinity, Infinity, !isMaximizing, null, castlingRights);
+            const newEnPassant = computeEnPassantTarget(move.from, move.to, move.type);
+            const newCastling = computeCastlingRights(castlingRights, move.from.row, move.from.col, move.to.row, move.to.col);
+            const evaluation = minimax(newBoard, depth - 1, -Infinity, Infinity, !isMaximizing, newEnPassant, newCastling);
             return Math.abs(evaluation - bestEval) < 50;
         });
         if (goodMoves.length > 1) {

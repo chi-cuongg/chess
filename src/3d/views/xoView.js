@@ -14,6 +14,7 @@ export class XOView {
         this.ownedGeometries = new Set();
         this.ownedMaterials = new Set();
         this.pieceHeights = new Map();
+        this.drops = new Map();
         this.pieceScales = new Map();
         this.xInstances = [];
         this.oInstances = [];
@@ -54,6 +55,8 @@ export class XOView {
             finish: material(this.theme.highlights.winLine)
         };
         this.markerMaterials.last.opacity = 0.45;
+        // The expanding finish ring fades independently of the winning line.
+        this.finishMaterial = material(this.theme.highlights.winLine);
 
         const marker = (shape, paint) => {
             const mesh = new THREE.Mesh(shape, paint);
@@ -70,7 +73,7 @@ export class XOView {
         const winGeometry = geometry(new THREE.RingGeometry(this.cellSize * 0.16, this.cellSize * 0.42, 32));
         this.winMarkers = Array.from({ length: 5 }, () => marker(winGeometry, this.markerMaterials.finish));
 
-        this.finishMarker = marker(geometry(new THREE.RingGeometry(this.cellSize * 0.45, this.cellSize * 0.65, 48)), this.markerMaterials.finish);
+        this.finishMarker = marker(geometry(new THREE.RingGeometry(this.cellSize * 0.45, this.cellSize * 0.65, 48)), this.finishMaterial);
 
         // Hover ghost preview for current player
         this.ghostMaterialX = new THREE.MeshStandardMaterial({
@@ -183,6 +186,8 @@ export class XOView {
         this.meshes.x.instanceMatrix.needsUpdate = true;
         this.meshes.o.count = countO;
         this.meshes.o.instanceMatrix.needsUpdate = true;
+        this.meshes.x.computeBoundingSphere();
+        this.meshes.o.computeBoundingSphere();
         this.engine.requestRender();
     }
 
@@ -197,10 +202,12 @@ export class XOView {
     animateDrop(row, col, animate = true) {
         const key = `${row},${col}`;
         const id = ++this.dropId;
+        this.drops.set(key, id);
         const initialHeight = 3.2;
 
         if (!animate || !this.engine.motionEnabled) {
             this.pieceHeights.delete(key);
+            this.drops.delete(key);
             this.syncInstances();
             return;
         }
@@ -209,10 +216,11 @@ export class XOView {
         this.syncInstances();
 
         this.engine.animate(350, t => {
-            if (this.disposed || this.dropId !== id) return;
+            if (this.disposed || this.drops.get(key) !== id) return;
             const h = (1 - t * t) * initialHeight;
             if (t >= 1) {
                 this.pieceHeights.delete(key);
+                this.drops.delete(key);
             } else {
                 this.pieceHeights.set(key, h);
             }
@@ -244,6 +252,7 @@ export class XOView {
                 });
             }
         } else {
+            this.pulseId++;
             this.winKey = '';
             this.winMarkers.forEach(m => { m.visible = false; });
             this.pieceScales.clear();
@@ -255,7 +264,7 @@ export class XOView {
             this.engine.animate(700, t => {
                 if (this.disposed || this.finishId !== id) return;
                 this.finishMarker.scale.setScalar(1 + t * 3);
-                this.markerMaterials.finish.opacity = 0.75 * (1 - t);
+                this.finishMaterial.opacity = 0.75 * (1 - t);
                 if (t === 1) this.finishMarker.visible = false;
             });
         } else if (!state.gameOver) {
@@ -267,15 +276,20 @@ export class XOView {
     update(state, prevState) {
         if (this.disposed) return;
         const previous = this.state || prevState;
-        const isNewMove = previous && state.lastMove && state.moveId !== previous.moveId;
+        const to = state.lastMove?.to;
+        const isNewMove = previous && to && state.moveId !== previous.moveId
+            && !previous.board[to.row][to.col] && !!state.board[to.row][to.col];
+        const boardChanged = !previous || state.board.some((row, r) => row.some((piece, c) => piece !== previous.board[r][c]));
 
         this.hideHoverPreview();
 
         this.board = cloneBoard(state.board);
         if (isNewMove && state.lastMove.to) {
             this.animateDrop(state.lastMove.to.row, state.lastMove.to.col, true);
-        } else {
+        } else if (boardChanged) {
+            this.drops.clear();
             this.pieceHeights.clear();
+            this.pieceScales.clear();
             this.syncInstances();
         }
 
@@ -316,6 +330,7 @@ export class XOView {
 
         this.markerMaterials.last.color.set(theme.highlights.lastMove);
         this.markerMaterials.finish.color.set(theme.highlights.winLine);
+        this.finishMaterial.color.set(theme.highlights.winLine);
         this.ghostMaterialX.color.set(theme.xo.x.color);
         this.ghostMaterialO.color.set(theme.xo.o.color);
 
@@ -336,6 +351,7 @@ export class XOView {
         }
 
         this.pieceHeights.clear();
+        this.drops.clear();
         this.pieceScales.clear();
 
         this.ownedGeometries.forEach(geometry => geometry.dispose());
@@ -343,6 +359,8 @@ export class XOView {
         this.ownedGeometries.clear();
         this.ownedMaterials.clear();
 
+        this.meshes.x.dispose();
+        this.meshes.o.dispose();
         disposeXOAssets();
         disposeBoardAssets();
 

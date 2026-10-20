@@ -60,21 +60,16 @@ export function parseXiangqiCode(code) {
     return { code: 'R_K', info: XIANGQI_PIECES['R_K'] };
 }
 
-function getTextureKey(code, themeId) {
-    return `${themeId}:${code}`;
-}
-
 function getOrCreateSymbolTexture(code, info, theme) {
-    const key = getTextureKey(code, theme.id);
-    if (textureCache.has(key)) {
-        return textureCache.get(key);
-    }
+    const cached = textureCache.get(code);
+    if (cached?.userData.themeId === theme.id) return cached;
+    cached?.dispose();
 
     const isRed = info.color === 'red';
     const cfg = isRed ? theme.xiangqi.red : theme.xiangqi.black;
 
     // Disc face background color: light ivory/cream for contrast, or themed
-    let discBg = isRed ? '#f5e8d0' : '#ece4d4';
+    let discBg = isRed ? '#f5e8d0' : '#21170e';
     if (theme.id === 'cyber') {
         discBg = isRed ? '#20081c' : '#081c24';
     } else if (theme.id === 'vampire') {
@@ -90,19 +85,31 @@ function getOrCreateSymbolTexture(code, info, theme) {
         height: 256
     });
 
-    textureCache.set(key, texture);
+    texture.userData.themeId = theme.id;
+    textureCache.set(code, texture);
     return texture;
 }
 
 function getOrCreateMaterials(code, info, theme) {
-    const key = `${theme.id}:${code}`;
-    if (materialCache.has(key)) {
-        return materialCache.get(key);
-    }
+    const key = code;
 
     const isRed = info.color === 'red';
     const cfg = isRed ? theme.xiangqi.red : theme.xiangqi.black;
     const symbolTexture = getOrCreateSymbolTexture(code, info, theme);
+
+    if (materialCache.has(key)) {
+        const mats = materialCache.get(key);
+        for (const material of [mats[0], mats[2]]) {
+            material.color.setHex(cfg.discColor);
+            material.roughness = cfg.roughness;
+            material.metalness = cfg.metalness;
+        }
+        mats[1].map = symbolTexture;
+        mats[1].roughness = cfg.roughness * 0.9;
+        mats[1].metalness = cfg.metalness * 0.5;
+        mats[1].needsUpdate = true;
+        return mats;
+    }
 
     // 0: side, 1: top, 2: bottom
     const sideMat = new THREE.MeshStandardMaterial({
@@ -157,6 +164,7 @@ export function createXiangqiPiece(code, themePreset = null) {
 
 export function setXiangqiTheme(themePreset) {
     currentThemePreset = getTheme(themePreset);
+    for (const code of materialCache.keys()) getOrCreateMaterials(code, XIANGQI_PIECES[code], currentThemePreset);
 }
 
 export function disposeXiangqiPieces() {

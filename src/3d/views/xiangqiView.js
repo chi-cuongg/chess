@@ -139,6 +139,7 @@ export class XiangqiView {
     }
 
     removePiece(record) {
+        record.rotationId = (record.rotationId || 0) + 1;
         this.finishMotion(record);
         record.liftId++;
         this.restoreMaterials(record);
@@ -313,9 +314,9 @@ export class XiangqiView {
             const fromRot = record.rotationY !== undefined ? record.rotationY : (record.object.rotation.y || 0);
             const diff = targetRot - fromRot;
             if (Math.abs(diff) < 1e-4) continue;
-            const id = ++record.motionId;
+            const id = record.rotationId = (record.rotationId || 0) + 1;
             this.engine.animate(animate ? 450 : 0, t => {
-                if (this.disposed || record.motionId !== id) return;
+                if (this.disposed || record.rotationId !== id) return;
                 record.rotationY = fromRot + diff * t;
                 record.object.rotation.y = record.rotationY;
             });

@@ -260,6 +260,19 @@ test('disabled effects apply final states immediately with no pending animation'
     f.view.dispose();
 });
 
+test('flipping during a move preserves both travel and character rotation', () => {
+    const f = fixture();
+    f.move({ row: 6, col: 4 }, { row: 5, col: 4 });
+    f.tick(0.25);
+    f.update({ ...f.state, flipped: true });
+    f.tick(1);
+    const soldier = f.view.pieces.get('5,4');
+    assert.equal(soldier.object.position.z, 0.5);
+    assert.equal(soldier.object.position.y, 0);
+    assert(Math.abs(soldier.object.rotation.y - Math.PI) < 1e-6);
+    f.view.dispose();
+});
+
 test('theme changes preserve pieces and update selected clones and markers', () => {
     const f = fixture(), soldier = f.view.pieces.get('6,4'), before = metrics.boards;
     f.update({ ...f.state, selected: { row: 6, col: 4 } });

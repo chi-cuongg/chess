@@ -169,6 +169,71 @@ test('placing multiple X and O pieces maintains correct counts and coordinates',
     f.view.dispose();
 });
 
+test('rapid moves and AI status updates let every drop finish', () => {
+    const f = fixture();
+    f.move(7, 7, 'X');
+    f.tick(0.25);
+    f.update({ ...f.state, aiThinking: true });
+    assert(f.view.pieceHeights.get('7,7') > 0);
+    f.move(7, 8, 'O');
+    f.tick(1);
+    assert.equal(f.view.pieceHeights.size, 0);
+    f.view.dispose();
+});
+
+test('undo during a drop cancels old callbacks without dropping the surviving piece', () => {
+    const f = fixture();
+    f.move(7, 7, 'X');
+    f.tick(1);
+    const first = f.state;
+    f.move(7, 8, 'O');
+    const calls = f.calls.length;
+    f.update({ ...first, moveId: 4 });
+    assert.equal(f.calls.length, calls);
+    f.tick(0.5);
+    assert.equal(f.view.pieceHeights.size, 0);
+    assert.equal(f.view.meshes.x.count, 1);
+    assert.equal(f.view.meshes.o.count, 0);
+    f.view.dispose();
+});
+
+test('instance bounds expand after adding a distant piece and dispose frees instance buffers', () => {
+    const f = fixture();
+    f.move(7, 7, 'X');
+    f.tick(1);
+    f.move(14, 14, 'X');
+    f.tick(1);
+    assert(f.view.meshes.x.boundingSphere.containsPoint(new THREE.Vector3(4.2, 0, 4.2)));
+    let disposed = 0;
+    f.view.meshes.x.addEventListener('dispose', () => disposed++);
+    f.view.meshes.o.addEventListener('dispose', () => disposed++);
+    f.view.dispose();
+    assert.equal(disposed, 2);
+});
+
+test('finish fade preserves the win line and undo cancels its old pulse', () => {
+    const f = fixture();
+    const before = f.state;
+    for (let c = 5; c < 10; c++) f.move(7, c, 'X');
+    f.tick(1);
+    const winLine = Array.from({ length: 5 }, (_, i) => ({ row: 7, col: i + 5 }));
+    const won = { ...f.state, winLine, gameOver: true };
+    f.update(won);
+    f.tick(1);
+    assert(f.view.markerMaterials.finish.opacity >= 0.5);
+    f.update({ ...before, moveId: 10 });
+    f.tick(0.25);
+    assert.equal(f.view.pieceScales.size, 0);
+    assert(f.view.winMarkers.every(marker => !marker.visible));
+    f.update({ ...won, moveId: 11 });
+    f.tick(0.25);
+    assert(f.view.pieceScales.size > 0);
+    f.update({ ...before, moveId: 12 });
+    f.tick(0.5);
+    assert.equal(f.view.pieceScales.size, 0);
+    f.view.dispose();
+});
+
 test('same-move AI snapshots retain piece positions without restarting drop', () => {
     const f = fixture();
     f.move(7, 7, 'X');

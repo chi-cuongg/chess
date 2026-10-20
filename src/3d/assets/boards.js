@@ -76,6 +76,7 @@ function drawChessTexture(theme, boardWidth = 9.0, boardDepth = 9.0, squareSize 
     }
 
     const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
     trackResource(tex);
     return tex;
 }
@@ -160,6 +161,7 @@ function drawXiangqiTexture(theme, boardWidth = 9.0, boardDepth = 10.0, spacingX
     ctx.fillText('漢   界', marginX_px + 6 * stepX, riverY);
 
     const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
     trackResource(tex);
     return tex;
 }
@@ -213,6 +215,7 @@ function drawCaroTexture(theme, size = 15, boardWidth = 9.6, boardDepth = 9.6, c
     }
 
     const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
     trackResource(tex);
     return tex;
 }

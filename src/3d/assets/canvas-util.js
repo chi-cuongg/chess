@@ -115,6 +115,7 @@ export function createWoodTexture({
     ctx.globalAlpha = 1.0;
 
     const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
     return texture;
@@ -177,5 +178,6 @@ export function createXiangqiSymbolTexture({
     ctx.restore();
 
     const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
     return texture;
 }

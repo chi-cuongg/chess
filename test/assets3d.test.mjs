@@ -53,6 +53,25 @@ function countTriangles(obj) {
     return total;
 }
 
+test('Xiangqi theme updates existing pieces and releases replaced symbol textures', () => {
+    disposeXiangqiPieces();
+    setXiangqiTheme('harry-potter');
+    const piece = createXiangqiPiece('R_K');
+    const materials = piece.material;
+    const oldTexture = materials[1].map;
+    let released = 0;
+    oldTexture.addEventListener('dispose', () => released++);
+    setXiangqiTheme('cyber');
+    assert.strictEqual(piece.material, materials);
+    assert.strictEqual(materials[0].color.getHex(), THEMES.cyber.xiangqi.red.discColor);
+    assert.notStrictEqual(materials[1].map, oldTexture);
+    assert.strictEqual(released, 1);
+    assert.strictEqual(createXiangqiPiece('R_K').material, materials);
+    setXiangqiTheme('harry-potter');
+    assert.strictEqual(materials[0].color.getHex(), THEMES['harry-potter'].xiangqi.red.discColor);
+    disposeXiangqiPieces();
+});
+
 test('Theme presets - 4 required themes exist with complete properties', () => {
     const requiredThemes = ['harry-potter', 'greek', 'cyber', 'vampire'];
     for (const id of requiredThemes) {
@@ -288,5 +307,17 @@ test('Board texture centers match squareToWorld exactly without margin distortio
         }
     }
 
+    disposeBoards();
+});
+
+test('board and symbol color textures are decoded as sRGB', () => {
+    for (const board of [createChessBoard(), createXiangqiBoard(), createXOBoard()]) {
+        board.group.traverse(mesh => {
+            if (mesh.material?.map) assert.strictEqual(mesh.material.map.colorSpace, THREE.SRGBColorSpace);
+        });
+    }
+    const piece = createXiangqiPiece('B_K');
+    assert.strictEqual(piece.material[1].map.colorSpace, THREE.SRGBColorSpace);
+    disposeXiangqiPieces();
     disposeBoards();
 });

@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Asset Preview - Cờ Vua / Cờ Tướng / Cờ Caro</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+        body {
+            background-color: #111;
+            color: #eee;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #ui-bar {
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(18, 18, 24, 0.82);
+            backdrop-filter: blur(10px);
+            padding: 8px 18px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            z-index: 100;
+        }
+        .ui-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #ffd700;
+            letter-spacing: 0.5px;
+        }
+        select {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 6px 14px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        select:hover, select:focus {
+            background: rgba(255, 255, 255, 0.16);
+            border-color: #ffd700;
+        }
+        #info-badge {
+            font-size: 0.8rem;
+            color: #aaa;
+            padding-left: 6px;
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        #legend {
+            position: absolute;
+            bottom: 14px;
+            left: 14px;
+            background: rgba(18, 18, 24, 0.82);
+            backdrop-filter: blur(8px);
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            font-size: 0.75rem;
+            line-height: 1.4;
+            color: #ccc;
+            z-index: 100;
+            pointer-events: none;
+        }
+        #legend strong {
+            color: #ffd700;
+        }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "/node_modules/three/build/three.module.js",
+            "three/addons/": "/node_modules/three/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="ui-bar">
+        <span class="ui-label">🎮 3D Preview:</span>
+        <select id="theme-select">
+            <option value="harry-potter">Harry Potter</option>
+            <option value="greek">Greek Antiquity</option>
+            <option value="cyber">Cyberpunk</option>
+            <option value="vampire">Vampire Gothic</option>
+        </select>
+
+        <select id="view-select">
+            <option value="all">Toàn bộ 3 Bàn cờ</option>
+            <option value="chess">Bàn Cờ Vua (8x8)</option>
+            <option value="xiangqi">Bàn Cờ Tướng (10x9)</option>
+            <option value="xo">Bàn Caro (15x15)</option>
+            <option value="showcase">Showcase Từng Quân</option>
+        </select>
+
+        <div id="info-badge">Quay chuột để xoay / phóng to</div>
+    </div>
+
+    <div id="legend">
+        <strong>T15 3D Asset Library:</strong><br>
+        • Vua (thánh giá), Hậu (vương miện răng cưa), Tượng (rãnh chéo), Xe (châu mai), Mã (extrude đầu ngựa), Tốt.<br>
+        • Cờ tướng: 7 loại quân, chữ Hán rõ nét, đĩa vát cạnh.<br>
+        • Caro: X hộp chéo + O TorusGeometry.<br>
+        • 3 bàn cờ gỗ procedural có viền vát + sông 楚河漢界.
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        import { THEMES, getTheme } from './themes.js';
+        import { createChessPiece, setChessTheme, disposeChessPieces } from './pieces-chess.js';
+        import { createXiangqiPiece, setXiangqiTheme, disposeXiangqiPieces, XIANGQI_PIECES } from './pieces-xiangqi.js';
+        import { createXOMeshes, setXOTheme, disposeXOMeshes } from './pieces-xo.js';
+        import { createChessBoard, createXiangqiBoard, createXOBoard, setBoardTheme, disposeBoards } from './boards.js';
+
+        let currentThemeId = 'harry-potter';
+        let currentView = 'all';
+
+        const container = document.getElementById('canvas-container');
+        const themeSelect = document.getElementById('theme-select');
+        const viewSelect = document.getElementById('view-select');
+        const infoBadge = document.getElementById('info-badge');
+
+        // Scene, Camera, Renderer
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 150);
+        camera.position.set(0, 18, 22);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.1;
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below ground
+        controls.minDistance = 2;
+        controls.maxDistance = 60;
+        controls.target.set(0, 0, 0);
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.4);
+        dirLight.position.set(8, 18, 12);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 60;
+        const d = 20;
+        dirLight.shadow.camera.left = -d;
+        dirLight.shadow.camera.right = d;
+        dirLight.shadow.camera.top = d;
+        dirLight.shadow.camera.bottom = -d;
+        dirLight.shadow.bias = -0.0005;
+        scene.add(dirLight);
+
+        // Secondary fill light for soft shadows
+        const fillLight = new THREE.DirectionalLight(0x88aaff, 0.35);
+        fillLight.position.set(-10, 10, -10);
+        scene.add(fillLight);
+
+        // Root group holding all scene objects
+        let sceneRoot = new THREE.Group();
+        scene.add(sceneRoot);
+
+        // Camera target presets
+        const cameraPresets = {
+            all: { pos: [0, 26, 32], target: [0, 0, 0] },
+            chess: { pos: [-9.8, 11, 14], target: [-9.8, 0, 0] },
+            xiangqi: { pos: [0, 12, 14], target: [0, 0, 0] },
+            xo: { pos: [9.8, 11, 14], target: [9.8, 0, 0] },
+            showcase: { pos: [0, 7.5, 8.5], target: [0, 0.4, 0] }
+        };
+
+        function flyCameraTo(viewKey) {
+            const preset = cameraPresets[viewKey] || cameraPresets.all;
+            camera.position.set(...preset.pos);
+            controls.target.set(...preset.target);
+            controls.update();
+        }
+
+        // -------------------------------------------------------------
+        // Scene Builder
+        // -------------------------------------------------------------
+
+        function rebuildScene() {
+            // Clear current objects
+            while (sceneRoot.children.length > 0) {
+                const child = sceneRoot.children[0];
+                sceneRoot.remove(child);
+            }
+            disposeChessPieces();
+            disposeXiangqiPieces();
+            disposeXOMeshes();
+            disposeBoards();
+
+            const theme = getTheme(currentThemeId);
+
+            // Apply theme lighting & atmosphere
+            scene.background = new THREE.Color(theme.scene.background);
+            scene.fog = new THREE.Fog(theme.scene.fogColor, theme.scene.fogNear, theme.scene.fogFar);
+
+            ambientLight.color.setHex(theme.lights.ambient.color);
+            ambientLight.intensity = theme.lights.ambient.intensity;
+
+            dirLight.color.setHex(theme.lights.directional.color);
+            dirLight.intensity = theme.lights.directional.intensity;
+            if (theme.lights.directional.position) {
+                dirLight.position.set(...theme.lights.directional.position);
+            }
+
+            setChessTheme(theme);
+            setXiangqiTheme(theme);
+            setXOTheme(theme);
+            setBoardTheme(theme);
+
+            if (currentView === 'showcase') {
+                buildShowcase(theme);
+            } else {
+                buildBoards(theme);
+            }
+
+            infoBadge.textContent = `${theme.name} • ${renderer.info.render.triangles || 'Ready'}`;
+        }
+
+        function buildBoards(theme) {
+            // 1. Chess Board & Pieces (Left side: x = -9.8)
+            const chessGroup = new THREE.Group();
+            chessGroup.position.set(-9.8, 0, 0);
+
+            const chessBoard = createChessBoard({ theme });
+            chessGroup.add(chessBoard.group);
+
+            // Populate Chess Pieces in standard starting layout
+            const chessInitial = [
+                ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+                ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+                null, null, null, null,
+                ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+                ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+            ];
+
+            for (let r = 0; r < 8; r++) {
+                const rowData = chessInitial[r];
+                if (!rowData) continue;
+                for (let c = 0; c < 8; c++) {
+                    const code = rowData[c];
+                    const piece = createChessPiece(code, theme);
+                    const pos = chessBoard.squareToWorld(r, c);
+                    piece.position.copy(pos);
+                    // Orient black pieces facing forward
+                    if (code === code.toLowerCase()) {
+                        piece.rotation.y = Math.PI;
+                    }
+                    chessGroup.add(piece);
+                }
+            }
+            sceneRoot.add(chessGroup);
+
+            // 2. Xiangqi Board & Pieces (Center: x = 0)
+            const xqGroup = new THREE.Group();
+            xqGroup.position.set(0, 0, 0);
+
+            const xqBoard = createXiangqiBoard({ theme });
+            xqGroup.add(xqBoard.group);
+
+            // Xiangqi initial layout
+            const xqBack = ['R', 'H', 'E', 'A', 'K', 'A', 'E', 'H', 'R'];
+            for (let c = 0; c < 9; c++) {
+                // Black baseline (row 0)
+                const bp = createXiangqiPiece('B_' + xqBack[c], theme);
+                bp.position.copy(xqBoard.squareToWorld(0, c));
+                bp.rotation.y = Math.PI;
+                xqGroup.add(bp);
+
+                // Red baseline (row 9)
+                const rp = createXiangqiPiece('R_' + xqBack[c], theme);
+                rp.position.copy(xqBoard.squareToWorld(9, c));
+                xqGroup.add(rp);
+
+                // Soldiers
+                if (c % 2 === 0) {
+                    const bSoldier = createXiangqiPiece('B_P', theme);
+                    bSoldier.position.copy(xqBoard.squareToWorld(3, c));
+                    bSoldier.rotation.y = Math.PI;
+                    xqGroup.add(bSoldier);
+
+                    const rSoldier = createXiangqiPiece('R_P', theme);
+                    rSoldier.position.copy(xqBoard.squareToWorld(6, c));
+                    xqGroup.add(rSoldier);
+                }
+            }
+            // Cannons
+            for (const c of [1, 7]) {
+                const bCannon = createXiangqiPiece('B_C', theme);
+                bCannon.position.copy(xqBoard.squareToWorld(2, c));
+                bCannon.rotation.y = Math.PI;
+                xqGroup.add(bCannon);
+
+                const rCannon = createXiangqiPiece('R_C', theme);
+                rCannon.position.copy(xqBoard.squareToWorld(7, c));
+                xqGroup.add(rCannon);
+            }
+            sceneRoot.add(xqGroup);
+
+            // 3. Caro Board & Pieces (Right side: x = +9.8)
+            const xoGroup = new THREE.Group();
+            xoGroup.position.set(9.8, 0, 0);
+
+            const xoBoard = createXOBoard(15, { theme });
+            xoGroup.add(xoBoard.group);
+
+            // Place sample active game in the center of Caro board
+            const xoMeshes = createXOMeshes(50, theme);
+            xoGroup.add(xoMeshes.x);
+            xoGroup.add(xoMeshes.o);
+
+            const dummyMatrix = new THREE.Matrix4();
+            const dummyPos = new THREE.Vector3();
+
+            // Sample X positions
+            const xMoves = [
+                [7, 7], [6, 8], [8, 6], [5, 9], [9, 5], [7, 8], [8, 7]
+            ];
+            xoMeshes.x.count = xMoves.length;
+            for (let i = 0; i < xMoves.length; i++) {
+                const [r, c] = xMoves[i];
+                const pos = xoBoard.squareToWorld(r, c);
+                dummyMatrix.makeTranslation(pos.x, pos.y, pos.z);
+                xoMeshes.x.setMatrixAt(i, dummyMatrix);
+            }
+            xoMeshes.x.instanceMatrix.needsUpdate = true;
+
+            // Sample O positions
+            const oMoves = [
+                [6, 7], [8, 8], [7, 6], [6, 6], [8, 5], [5, 8]
+            ];
+            xoMeshes.o.count = oMoves.length;
+            for (let i = 0; i < oMoves.length; i++) {
+                const [r, c] = oMoves[i];
+                const pos = xoBoard.squareToWorld(r, c);
+                dummyMatrix.makeTranslation(pos.x, pos.y, pos.z);
+                xoMeshes.o.setMatrixAt(i, dummyMatrix);
+            }
+            xoMeshes.o.instanceMatrix.needsUpdate = true;
+
+            sceneRoot.add(xoGroup);
+        }
+
+        function buildShowcase(theme) {
+            const showcaseGroup = new THREE.Group();
+
+            // Row 1 & 2: Chess showcase (P, R, N, B, Q, K)
+            const chessTypes = ['P', 'R', 'N', 'B', 'Q', 'K'];
+            for (let i = 0; i < chessTypes.length; i++) {
+                const t = chessTypes[i];
+                const x = (i - 2.5) * 0.90;
+
+                // White piece
+                const wp = createChessPiece(t, theme);
+                wp.position.set(x, 0, 1.0);
+                showcaseGroup.add(wp);
+
+                // Black piece
+                const bp = createChessPiece(t.toLowerCase(), theme);
+                bp.position.set(x, 0, 2.3);
+                bp.rotation.y = Math.PI;
+                showcaseGroup.add(bp);
+            }
+
+            // Row 3 & 4: Xiangqi showcase (7 Red + 7 Black)
+            const xqTypes = ['K', 'A', 'E', 'H', 'R', 'C', 'P'];
+            for (let i = 0; i < xqTypes.length; i++) {
+                const t = xqTypes[i];
+                const x = (i - 3) * 0.80;
+
+                // Red piece
+                const rp = createXiangqiPiece('R_' + t, theme);
+                rp.position.set(x, 0, -0.4);
+                showcaseGroup.add(rp);
+
+                // Black piece
+                const bp = createXiangqiPiece('B_' + t, theme);
+                bp.position.set(x, 0, -1.6);
+                showcaseGroup.add(bp);
+            }
+
+            // Row 5: Caro showcase (X and O)
+            const xoMeshes = createXOMeshes(2, theme);
+            showcaseGroup.add(xoMeshes.x);
+            showcaseGroup.add(xoMeshes.o);
+
+            const m = new THREE.Matrix4();
+            xoMeshes.x.count = 1;
+            m.makeTranslation(-1.0, 0, -3.1);
+            xoMeshes.x.setMatrixAt(0, m);
+            xoMeshes.x.instanceMatrix.needsUpdate = true;
+
+            xoMeshes.o.count = 1;
+            m.makeTranslation(1.0, 0, -3.1);
+            xoMeshes.o.setMatrixAt(0, m);
+            xoMeshes.o.instanceMatrix.needsUpdate = true;
+
+            // Ground pedestal
+            const pedGeom = new THREE.CylinderGeometry(5.2, 5.5, 0.4, 48);
+            pedGeom.translate(0, -0.2, 0);
+            const pedMat = new THREE.MeshStandardMaterial({
+                color: theme.board.border || 0x221108,
+                roughness: 0.4,
+                metalness: 0.1
+            });
+            const pedMesh = new THREE.Mesh(pedGeom, pedMat);
+            pedMesh.receiveShadow = true;
+            showcaseGroup.add(pedMesh);
+
+            sceneRoot.add(showcaseGroup);
+        }
+
+        // Theme dropdown
+        themeSelect.addEventListener('change', (e) => {
+            currentThemeId = e.target.value;
+            rebuildScene();
+        });
+
+        // View dropdown
+        viewSelect.addEventListener('change', (e) => {
+            currentView = e.target.value;
+            rebuildScene();
+            flyCameraTo(currentView);
+        });
+
+        // Window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Initialize scene
+        rebuildScene();
+        flyCameraTo(currentView);
+
+        // Render loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Expose helper on window for automated QA / screenshots
+        window.switchPreviewTheme = (themeId) => {
+            currentThemeId = themeId;
+            themeSelect.value = themeId;
+            rebuildScene();
+        };
+
+        window.switchPreviewView = (viewKey) => {
+            currentView = viewKey;
+            viewSelect.value = viewKey;
+            rebuildScene();
+            flyCameraTo(viewKey);
+        };
+    </script>
+</body>
+</html>

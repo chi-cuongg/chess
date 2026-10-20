@@ -2335,6 +2335,136 @@ body {
 }
 
 /* ========================================
+   ⚡ Theme Animation & Effect Performance (T8)
+   ======================================== */
+.toggle-effects-btn {
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    color: inherit;
+    transition: background 0.2s, opacity 0.2s;
+    text-align: center;
+}
+
+.toggle-effects-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.toggle-effects-btn:focus-visible {
+    outline: 2px solid currentColor;
+}
+
+/* Keyframe optimizations: animate opacity & transform instead of continuous box-shadow/filter */
+@keyframes selectedPulse {
+    0%, 100% { opacity: 0.85; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.02); }
+}
+
+@keyframes checkPulse {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; }
+}
+
+@keyframes orbGlow {
+    0%, 100% { opacity: 0.8; transform: scale(0.96); }
+    50% { opacity: 1; transform: scale(1.04); }
+}
+
+@keyframes cyberPulse {
+    0%, 100% { opacity: 0.75; }
+    50% { opacity: 1; }
+}
+
+@keyframes checkPulseCyber {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+@keyframes moonGlow {
+    0%, 100% { opacity: 0.7; transform: scale(0.98); }
+    50% { opacity: 1; transform: scale(1.02); }
+}
+
+@keyframes vampirePulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+@keyframes captureGlowVampire {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+@keyframes checkPulseVampire {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+/* Pause infinite animations and hide particle overlays when effects are disabled */
+body.effects-disabled *,
+body.effects-disabled *::before,
+body.effects-disabled *::after {
+    animation-play-state: paused !important;
+}
+
+body.effects-disabled .bats-container,
+body.effects-disabled .blood-container,
+body.effects-disabled .magic-flash,
+body.effects-disabled .magic-sparkle,
+body.effects-disabled .spell-text,
+body.effects-disabled .zeus-lightning,
+body.effects-disabled .thunder-flash,
+body.effects-disabled .marble-debris,
+body.effects-disabled .greek-text,
+body.effects-disabled .cyber-glitch,
+body.effects-disabled .digital-particle,
+body.effects-disabled .cyber-text,
+body.effects-disabled .screen-glitch,
+body.effects-disabled .vampire-bite,
+body.effects-disabled .blood-pool,
+body.effects-disabled .blood-drop,
+body.effects-disabled .flying-bat {
+    display: none !important;
+}
+
+/* Respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-play-state: paused !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .bats-container,
+    .blood-container,
+    .magic-flash,
+    .magic-sparkle,
+    .spell-text,
+    .zeus-lightning,
+    .thunder-flash,
+    .marble-debris,
+    .greek-text,
+    .cyber-glitch,
+    .digital-particle,
+    .cyber-text,
+    .screen-glitch,
+    .vampire-bite,
+    .blood-pool,
+    .blood-drop,
+    .flying-bat {
+        display: none !important;
+    }
+}
+
+/* ========================================
    🌐 Online Panel
    ======================================== */
 .online-panel {

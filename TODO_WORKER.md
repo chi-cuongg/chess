@@ -166,3 +166,4 @@ Lệnh kiểm tra cơ bản: `npm test` (12 test engine cờ vua) và `npm run l
 - T4 — DONE — AI negamax/alpha-beta, iterative deepening, MVV-LVA và vị trí; Worker có request id, fallback chia lát 8ms, hủy khi undo/new/destroy. 16 test cờ tướng và lint PASS.
 - T5 — DONE — Luật Caro thuần và AI pattern tấn công/phòng thủ, radius 2, thắng/chặn ngay, alpha-beta sâu 2–4 có hạn thời gian. 15 test Caro PASS; toàn bộ test/lint PASS.
 - T7 — DONE — Tối ưu render cờ vua: scope query selector vào boardEl, cache 64 ô cờ, event delegation trên board, diff piece & classes không tạo lại node, replay hủy khi destroy. Test/lint PASS.
+- T8 — DONE — Hiệu năng hiệu ứng theme: dừng timer/bats khi tab ẩn và đổi theme, giới hạn particle pool max 20, nút toggle hiệu ứng (lưu localStorage), tối ưu animation dùng opacity/transform, pause animation khi tắt hiệu ứng và tôn trọng prefers-reduced-motion. Test/lint PASS.

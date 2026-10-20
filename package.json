@@ -7,7 +7,7 @@
     "start": "npm run dev",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "test": "node test/chess.test.js && node test/xiangqi.test.js && node test/xo.test.js && node test/controllers.test.js && node --test test/chess3d.test.mjs && node --test test/xiangqi3d.test.mjs",
+    "test": "node test/chess.test.js && node test/xiangqi.test.js && node test/xo.test.js && node test/controllers.test.js && node --test test/chess3d.test.mjs && node --test test/xiangqi3d.test.mjs && node --test test/xo3d.test.mjs",
     "lint": "node test/lint.js"
   },
   "author": "",

@@ -181,6 +181,7 @@ Lệnh kiểm tra cơ bản: `npm test` (12 test engine cờ vua) và `npm run l
 - T15 — DONE — Thư viện asset 3D thủ tục (6 loại cờ vua Lathe/Extrude <= 1.3k tris, 14 quân cờ tướng đĩa beveled 144 tris chữ Hán rõ, Caro X/O InstancedMesh; 3 bàn cờ gỗ procedural viền vát + sông 楚河漢界 khứ hồi tọa độ 379/379 ô); 4 preset theme; 8 test node --test test/assets3d.test.mjs và npm test, lint PASS; đã xem ảnh Orca screenshot 4 theme đẹp và nhận diện rõ.
 - T15-fix — DONE — Căn chỉnh tỷ lệ lề bàn cờ và texture trong boards.js để tâm ô/giao điểm trên CanvasTexture khớp 100% với squareToWorld (Chess 8x8, Xiangqi 10x9, Caro 15x15), thêm test kiểm tra độ lệch < 1e-6; lint, test, build PASS.
 - T17 — DONE — Xiangqi 3D view: quân đặt tại giao điểm 10x9, animate cung parabol 380ms, ăn quân bay lên mờ dần 420ms, nâng/glow quân chọn, gợi ý nước đi / ăn quân, chiếu tướng nhịp đỏ 1500ms, lật bàn xoay camera 180° đồng thời xoay chữ luôn hướng về người chơi; 14 test xiangqi3d PASS (100 test tổng), lint 37 file và build PASS.
+- T18 — DONE — Caro 3D view: InstancedMesh cho X/O, hover preview quân mờ theo lượt (X/O), quân rơi xuống 350ms, winLine 5 ô và quân thắng phát sáng nhịp 1800ms, pick chính xác 225 ô kể cả khi nhìn nghiêng; 14 test xo3d PASS (114 test tổng), lint 39 file và build PASS.
 
 
 ---

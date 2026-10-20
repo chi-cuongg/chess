@@ -92,6 +92,7 @@ class GameManager {
             return;
         }
         this.currentGame.destroy();
+        window.themeSwitcher?.resetEffects();
         document.querySelectorAll('.modal.show').forEach(el => el.classList.remove('show'));
         document.querySelectorAll('.flipped').forEach(el => el.classList.remove('flipped'));
         const oldBoard = document.getElementById('chessboard');
@@ -104,14 +105,10 @@ class GameManager {
             const key = type === 'xiangqi' ? 'xiangqiGame' : 'xoGame';
             if (!window[key]) window[key] = type === 'xiangqi' ? new XiangqiGame() : new XOGame();
             this.currentGame = window[key];
-            // Legacy UI adapters, replaced by each controller's implementation below.
-            if (!this.currentGame.destroy) this.currentGame.destroy = function () { this.active = false; };
-            if (!this.currentGame.setAI) this.currentGame.setAI = function () {
-                this.playingAgainstAI = false;
-                this.updateStatus('AI sẽ được bổ sung cho loại cờ này.');
-            };
         }
         this.currentGame.init();
+        // Ambient effects restart with fresh timers; no old capture can fire.
+        window.themeSwitcher?.applyEffectsState();
         try { localStorage.setItem('board-game-type', type); } catch (e) { /* Optional persistence. */ }
         this.updateUI();
     }

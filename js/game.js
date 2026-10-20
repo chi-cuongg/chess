@@ -657,16 +657,18 @@ class ChessGame {
     }
 
     undoMove() {
+        if (this.isReplaying || this.moveHistory.length === 0) return;
         this.cancelAI();
-        if (this.isReplaying) return;
-        if (this.moveHistory.length === 0) return;
+        this.pendingPromotion = null;
+        this.hideModal('promotion-modal');
         if (this.isGameOver) {
             this.isGameOver = false;
             this.hideModal('game-over-modal');
         }
 
-        // Undo one move (or two if playing against AI)
-        const undoCount = this.playingAgainstAI ? 2 : 1;
+        // Before the AI replies, only the human move needs undoing. After a
+        // reply, undo the whole pair so the human can choose another move.
+        const undoCount = this.playingAgainstAI && this.currentTurn !== this.aiColor ? 2 : 1;
         for (let i = 0; i < undoCount && this.moveHistory.length > 0; i++) {
             const state = this.moveHistory.pop();
             this.board = state.board;
@@ -687,6 +689,7 @@ class ChessGame {
         this.renderBoard();
         this.updateUI();
         this.updateStatus(`Lượt: ${this.currentTurn === 'white' ? 'Trắng' : 'Đen'}`);
+        if (this.active && this.playingAgainstAI && this.currentTurn === this.aiColor) this.scheduleAI();
     }
 
     setAI(enabled, difficulty) {

@@ -6,18 +6,33 @@ theo chủ đề.
 
 ## Tính năng
 
-- **Cờ vua**: đầy đủ luật cơ bản (nhập thành, phong cấp, bắt tốt qua đường),
-  phát hiện chiếu hết, hết nước (stalemate), không đủ quân, luật 50 nước và
-  lặp lại thế cờ 3 lần.
-- **AI**: minimax + cắt tỉa alpha-beta, có bảng giá trị theo vị trí; chạy trong
-  Web Worker để không chặn giao diện (tự động fallback nếu Worker bị chặn).
-- **Cờ tướng**: luật quân cơ bản, cấm lộ mặt tướng, phát hiện chiếu bí / hết nước.
-- **Cờ XO (Caro)**: bàn 15x15, thắng khi có 5 quân liên tiếp, hòa khi kín bàn.
-- **Online P2P**: tạo phòng / vào phòng qua PeerJS, có chat, đầu hàng, đồng bộ
-  nước đi.
-- **Lịch sử**: lưu ván đấu vào `localStorage`, xem lại (replay) và xuất PGN
-  (chuẩn SAN).
-- **Giao diện**: 4 chủ đề (Harry Potter, Hy Lạp, Cyber, Ma Cà Rồng) kèm hiệu ứng.
+- **Cờ vua**: nhập thành, phong cấp, bắt tốt qua đường; phát hiện chiếu hết,
+  hết nước (hòa), không đủ quân, luật 50 nước và lặp lại thế cờ 3 lần.
+  AI minimax/alpha-beta chạy qua Web Worker; ba mức khó dùng độ sâu 2/4/6.
+- **Cờ tướng**: luật cung/sông, cản chân mã/mắt tượng, ngòi pháo, cấm lộ mặt
+  tướng và tự chiếu; chiếu bí hoặc hết nước đều thua. Có gợi ý nước hợp lệ,
+  highlight nước cuối/tướng bị chiếu và danh sách quân bị ăn.
+  AI negamax/alpha-beta tìm sâu dần với ngân sách khoảng 200/800/2000ms.
+  Có thể chọn cầm Đỏ hoặc Đen; bàn tự lật khi cầm Đen đấu AI.
+- **Cờ Caro**: bàn 15×15, ít nhất 5 quân liên tiếp thì thắng (không áp dụng
+  luật chặn hai đầu); tô sáng 5 ô thắng, nước cuối và preview khi rê chuột.
+  AI chấm pattern tấn công/phòng thủ, ưu tiên thắng ngay/chặn bốn;
+  mức vừa/khó có tìm kiếm alpha-beta sâu tối đa 2/4. Người cầm X đi trước, AI cầm O.
+- **AI và hoàn tác**: chọn độ khó rồi bấm “Chơi với AI”; chọn “Chơi 2 người”
+  để tắt AI. Cả ba game dùng Worker. Cờ tướng/Caro có fallback chia lát trên
+  main thread khi Worker không dùng được. Hoàn tác lùi cặp nước đã hoàn tất,
+  hoặc chỉ nước người chơi nếu AI đang chờ; kết quả tìm kiếm cũ bị hủy.
+- **Online P2P — chỉ cờ vua**: tạo/vào phòng qua PeerJS, chat, đầu hàng và
+  đồng bộ nước đi. Không thể đổi loại cờ hay bật AI khi đang trong phòng.
+- **Lịch sử — chỉ cờ vua**: lưu ván đấu vào `localStorage`, replay và xuất PGN
+  dùng ký hiệu SAN. Đổi game dừng replay và AI của game cũ.
+- **Giao diện**: bốn chủ đề Harry Potter, Hy Lạp, Cyber và Ma Cà Rồng.
+  Nút “✨ Hiệu ứng” bật/tắt hiệu ứng, lưu lựa chọn cùng theme và loại cờ.
+  Timer/particle được dọn khi ẩn tab, đổi theme hoặc đổi game;
+  tôn trọng `prefers-reduced-motion` của hệ điều hành.
+- **Responsive và bàn phím**: điều khiển chuyển xuống dưới bàn khi màn hình
+  hẹp, nút tối thiểu 40px. Dùng Tab/Shift+Tab để đi qua các điều khiển;
+  Esc hoặc click nền đóng modal. Đóng chọn phong cấp hủy lựa chọn để đi lại nước đó.
 
 ## Yêu cầu
 
@@ -51,8 +66,8 @@ Trên Windows cũng có thể nháy đúp `run.bat`.
 ## Kiểm thử & kiểm tra cú pháp
 
 ```bash
-npm test    # chạy test cho engine cờ vua (move generation, luật, AI)
-npm run lint # kiểm tra cú pháp tất cả file JS
+npm test     # luật/AI cả ba game và hồi quy controller/lifecycle
+npm run lint # tự quét và kiểm tra cú pháp tất cả file JS, gồm file mới
 ```
 
 ## Cấu trúc thư mục
@@ -66,20 +81,40 @@ js/
   pieces.js         # định nghĩa quân và sinh nước đi theo quân
   moves.js          # luật đặc biệt, kiểm tra hợp lệ / chiếu hết / hòa
   ai.js             # đánh giá thế cờ + minimax
-  ai-worker.js      # Web Worker bọc AI
+  ai-worker.js      # Web Worker định tuyến AI của cả ba game
   game.js           # bộ điều khiển cờ vua (UI + luật)
   online.js         # kết nối P2P PeerJS
   chat.js           # chat trong ván online
   history.js        # lưu / xem lại / xuất PGN
   theme.js          # chuyển theme + hiệu ứng
-  xiangqi.js        # cờ tướng
-  xo.js             # cờ XO
+  xiangqi-rules.js  # luật cờ tướng thuần, export cho Node
+  xiangqi-ai.js     # AI cờ tướng, có tìm kiếm chia lát
+  xiangqi.js        # UI/controller cờ tướng
+  xo-rules.js       # luật Caro thuần, kiểm tra đường thắng
+  xo-ai.js          # AI Caro theo pattern + alpha-beta
+  xo.js             # UI/controller Caro
   manager.js        # chọn loại cờ, điều phối ván
   bootstrap.js      # khởi tạo online/chat/history
 test/
   chess.test.js     # test engine cờ vua (Node, không cần thư viện)
-  lint.js           # kiểm tra cú pháp các file JS
+  xiangqi.test.js   # luật và AI cờ tướng
+  xo.test.js        # luật và AI Caro
+  controllers.test.js # undo/Worker, render/replay/PGN, theme và Manager
+  lint.js           # tự quét các file JS để kiểm tra cú pháp
 ```
+
+## Phạm vi kiểm thử tích hợp
+
+`npm test` chạy 56 test (12 cờ vua, 16 cờ tướng, 15 Caro và 13 controller/lifecycle),
+không cần cài thư viện test mới. Bộ hồi quy có trường hợp undo khi AI đang chờ,
+bỏ kết quả Worker trả muộn, giữ node render T7, dừng replay, xuất SAN PGN,
+dọn timer theme T8, toggle hiệu ứng và khóa đổi game trong phòng online.
+
+Đã kiểm tra trên browser Orca: 36 tổ hợp của 360/768/1440px × ba game × bốn theme
+về kích thước bàn, tràn ngang, kích thước nút và vị trí toggle hiệu ứng;
+28 kiểm tra hành vi gồm năm vòng đổi game, Worker/fallback, undo và modal.
+Cần review riêng Electron `app://`, một ván PeerJS giữa hai máy và đo CPU idle
+bằng DevTools Performance; các kiểm tra browser/Node trên không thay thế ba mục này.
 
 ## Bảo mật
 

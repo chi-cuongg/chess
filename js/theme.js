@@ -98,6 +98,7 @@ class ThemeSwitcher {
         document.body.classList.toggle('effects-disabled', !this.effectsEnabled);
         if (this.effectsToggleBtn) {
             this.effectsToggleBtn.textContent = this.effectsEnabled ? '✨ Hiệu ứng: Bật' : '✨ Hiệu ứng: Tắt';
+            this.effectsToggleBtn.setAttribute('aria-pressed', String(this.effectsEnabled));
             this.effectsToggleBtn.title = this.effectsEnabled ? 'Nhấn để tắt hiệu ứng động' : 'Nhấn để bật hiệu ứng động';
         }
         if (!this.effectsEnabled) {
@@ -116,10 +117,14 @@ class ThemeSwitcher {
         this.applyTheme(theme);
     }
 
-    applyTheme(theme) {
-        // Clear previous theme's particles & timers
+    resetEffects() {
         this.stopBats();
         this.clearActiveParticles();
+    }
+
+    applyTheme(theme) {
+        // Clear previous theme's particles & timers
+        this.resetEffects();
 
         // Remove all theme classes
         document.body.classList.remove('theme-harry-potter', 'theme-greek', 'theme-cyber', 'theme-vampire');

@@ -53,7 +53,6 @@ test('applyMove and legal generation do not mutate input', () => {
     const moves = rules.generateLegalMoves(b, 'red'); const next = rules.applyMove(b, moves[0]);
     assert.equal(JSON.stringify(b), before); assert.notDeepEqual(next, b);
 });
-console.log(count + ' Xiangqi tests passed');
 
 const ai = require('../js/xiangqi-ai');
 test('AI returns a legal move without mutating the board', () => {
@@ -74,3 +73,5 @@ test('AI resumable fallback respects time budget and no legal moves', () => {
     let state; do { state = search.step(3); } while (!state.done);
     assert(state.bestMove); assert(Date.now() - start < 500);
 });
+
+console.log(count + ' Xiangqi tests passed');

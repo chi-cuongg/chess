@@ -2833,127 +2833,65 @@ body {
    ======================================== */
 .xiangqi-board {
     display: grid;
-    grid-template-columns: repeat(9, 60px);
-    grid-template-rows: repeat(10, 60px);
-    gap: 0;
-    background-color: #dcb35c;
-    border: 5px solid #8b4513;
+    grid-template-columns: repeat(9, 1fr);
+    grid-template-rows: repeat(10, 1fr);
+    width: min(540px, 88vw, 72vh);
+    aspect-ratio: 9 / 10;
+    background: #dcb35c;
+    border: 4px solid #8b4513;
     position: relative;
-    width: 540px;
-    /* 9 * 60 */
-    height: 600px;
-    /* 10 * 60 */
-    margin: 0 auto;
+    margin: auto;
 }
-
 .xiangqi-board .square {
-    width: 60px;
-    height: 60px;
-    border: none;
-    /* We draw lines manually or via background */
-    position: relative;
-    background: transparent;
-    z-index: 10;
+    width: 100%; height: 100%; min-width: 0; position: relative;
+    border: none; background: transparent; z-index: 2;
+    box-shadow: none;
 }
-
-/* Drawing the grid lines */
 .xiangqi-board::before {
-    content: '';
-    position: absolute;
-    top: 30px;
-    left: 30px;
-    width: 480px;
-    /* (9-1) * 60 */
-    height: 540px;
-    /* (10-1) * 60 */
-    background-image:
-        linear-gradient(#000 1px, transparent 1px),
-        linear-gradient(90deg, #000 1px, transparent 1px);
-    background-size: 60px 60px;
+    content: ''; position: absolute; inset: 5% 5.5556%;
+    background-image: linear-gradient(#67421c 1px, transparent 1px), linear-gradient(90deg, #67421c 1px, transparent 1px);
+    background-size: 12.5% 11.1111%;
+    border-right: 1px solid #67421c; border-bottom: 1px solid #67421c;
     pointer-events: none;
-    z-index: 1;
 }
-
-/* The River */
 .xiangqi-board::after {
-    content: 'Sở Hà 漢 界 Hán Giới';
-    position: absolute;
-    top: 270px;
-    /* After 4 rows (4 * 60 + 30) ? No, 5th rank. 4.5 * 60 = 270 */
-    left: 30px;
-    width: 480px;
-    height: 60px;
-    background-color: #dcb35c;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 24px;
-    font-family: "KaiTi", "SimSun", serif;
-    color: #5d4037;
-    z-index: 1;
-}
-
-/* Palace diagonals */
-.palace-top {
-    position: absolute;
-    top: 30px;
-    left: 210px;
-    /* 3 * 60 + 30 */
-    width: 120px;
-    height: 120px;
-    background:
-        linear-gradient(45deg, transparent 49%, #000 49%, #000 51%, transparent 51%),
-        linear-gradient(-45deg, transparent 49%, #000 49%, #000 51%, transparent 51%);
+    content: '楚河　漢界'; position: absolute; top: 45%; left: 5.5556%;
+    width: 88.8889%; height: 10%; display: grid; place-items: center;
+    background: #dcb35c; color: #51320e; font-size: clamp(16px, 4vw, 26px);
     pointer-events: none;
-    z-index: 0;
 }
-
-.palace-bottom {
-    position: absolute;
-    bottom: 30px;
-    left: 210px;
-    width: 120px;
-    height: 120px;
-    background:
-        linear-gradient(45deg, transparent 49%, #000 49%, #000 51%, transparent 51%),
-        linear-gradient(-45deg, transparent 49%, #000 49%, #000 51%, transparent 51%);
+.palace-top, .palace-bottom {
+    position: absolute; left: 38.8889%; width: 22.2222%; height: 20%;
+    background: linear-gradient(45deg, transparent 49.5%, #67421c 49.5%, #67421c 50.5%, transparent 50.5%),
+                linear-gradient(-45deg, transparent 49.5%, #67421c 49.5%, #67421c 50.5%, transparent 50.5%);
     pointer-events: none;
-    z-index: 0;
 }
-
-/* Xiangqi Pieces */
+.palace-top { top: 5%; }
+.palace-bottom { bottom: 5%; }
 .xiangqi-piece {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background-color: #f0d5a0;
-    border: 3px solid #8b5a2b;
-    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 28px;
-    font-weight: bold;
-    font-family: "KaiTi", "SimSun", serif;
-    z-index: 10;
-    cursor: pointer;
+    width: 88%; height: 88%; border-radius: 50%; background: #f0d5a0;
+    border: 2px solid currentColor; color: #17110b;
+    display: grid; place-items: center; font-size: clamp(17px, 4vw, 28px);
+    font-weight: bold; font-family: 'KaiTi', 'SimSun', serif;
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
     user-select: none;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
 }
-
-.xiangqi-piece.red {
-    color: #cc0000;
-    border-color: #cc0000;
+.xiangqi-piece.red { color: #a00000; }
+.xiangqi-piece.black { color: #16110c; }
+.xiangqi-board .square.selected { background: #f8ef8c99; }
+.xiangqi-board .square.last-move { background: #9acf6e88; }
+.xiangqi-board .square.check { background: #e8444499; }
+.xiangqi-board .valid-move::after {
+    content: ''; position: absolute; width: 24%; height: 24%; border-radius: 50%;
+    background: #214918aa; left: 38%; top: 38%; pointer-events: none;
 }
-
-.xiangqi-piece.black {
-    color: #000000;
-    border-color: #000000;
+.xiangqi-board .valid-capture::after {
+    content: ''; position: absolute; inset: 2%; border: 3px solid #b50000;
+    border-radius: 50%; pointer-events: none;
 }
-
+.xiangqi-flipped { transform: rotate(180deg); }
+.xiangqi-flipped .xiangqi-piece { transform: translate(-50%, -50%) rotate(180deg); }
+.red-turn { background: #c62828; }
 
 /* ========================================
    ⭕ XO (CARO) STYLES ⭕
@@ -3003,15 +2941,6 @@ body {
 /* Hide labels for non-chess games by default via JS */
 .hidden {
     display: none !important;
-}
-
-/* Adjustments for smaller screens for Xiangqi/XO if needed */
-@media (max-width: 850px) {
-    .xiangqi-board {
-        transform: scale(0.65);
-        margin-top: -100px;
-        margin-bottom: -100px;
-    }
 }
 
 /* Check Overlay */

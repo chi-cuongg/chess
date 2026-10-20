@@ -1,10 +1,5 @@
 class XiangqiGame {
     constructor() {
-        // Red is at the bottom (rows 7-9), Black at top (rows 0-2)
-        // 9 cols (0-8), 10 rows (0-9)
-        this.board = Array(10).fill().map(() => Array(9).fill(null));
-        this.turn = 'red';
-        this.selectedSquare = null;
         this.pieces = {
             // Red pieces
             'R_K': { symbol: '帅', color: 'red', name: 'General' },
@@ -25,539 +20,166 @@ class XiangqiGame {
             'B_P': { symbol: '卒', color: 'black', name: 'Soldier' }
         };
 
-        // Initial setup string for convenience or manual placement
-        this.initBoardSetup();
+        this.playingAgainstAI = false;
+        this.humanColor = 'red';
+        this.onClick = e => {
+            const square = e.target.closest('.square');
+            if (square && this.boardEl.contains(square)) this.handleSquareClick(Number(square.dataset.row), Number(square.dataset.col));
+        };
+        this.onSideChange = e => {
+            this.humanColor = e.target.value;
+            this.newGame();
+        };
     }
 
     init() {
-        this.initBoardSetup();
-        this.turn = 'red';
-        this.selectedSquare = null;
-        this.isGameOver = false;
-        this.history = []; // Track history
+        this.active = true;
+        this.boardEl = document.getElementById('chessboard');
+        this.boardEl.addEventListener('click', this.onClick);
+        document.getElementById('xiangqi-side-control').hidden = false;
+        document.getElementById('xiangqi-side').addEventListener('change', this.onSideChange);
         this.createBoard();
-        this.renderBoard();
-        this.updateStatus('Lượt: Đỏ');
-    }
-
-    initBoardSetup() {
-        const setup = [
-            ['B_R', 'B_H', 'B_E', 'B_A', 'B_K', 'B_A', 'B_E', 'B_H', 'B_R'],
-            [null, null, null, null, null, null, null, null, null],
-            [null, 'B_C', null, null, null, null, null, 'B_C', null],
-            ['B_P', null, 'B_P', null, 'B_P', null, 'B_P', null, 'B_P'],
-            [null, null, null, null, null, null, null, null, null], // River (Black side)
-            [null, null, null, null, null, null, null, null, null], // River (Red side)
-            ['R_P', null, 'R_P', null, 'R_P', null, 'R_P', null, 'R_P'],
-            [null, 'R_C', null, null, null, null, null, 'R_C', null],
-            [null, null, null, null, null, null, null, null, null],
-            ['R_R', 'R_H', 'R_E', 'R_A', 'R_K', 'R_A', 'R_E', 'R_H', 'R_R']
-        ];
-
-        for (let r = 0; r < 10; r++) {
-            for (let c = 0; c < 9; c++) {
-                this.board[r][c] = setup[r][c];
-            }
-        }
+        this.newGame();
     }
 
     createBoard() {
-        const chessboard = document.getElementById('chessboard');
-        chessboard.innerHTML = '';
-        chessboard.className = 'xiangqi-board'; // Ensure class is set
-
-        // Add Palace markers
-        const palaceTop = document.createElement('div');
-        palaceTop.className = 'palace-top';
-        chessboard.appendChild(palaceTop);
-
-        const palaceBottom = document.createElement('div');
-        palaceBottom.className = 'palace-bottom';
-        chessboard.appendChild(palaceBottom);
-
-        for (let r = 0; r < 10; r++) {
-            for (let c = 0; c < 9; c++) {
-                const square = document.createElement('div');
-                square.className = 'square';
-                square.dataset.row = r;
-                square.dataset.col = c;
-                square.addEventListener('click', (e) => this.handleSquareClick(r, c));
-                chessboard.appendChild(square);
-            }
+        this.boardEl.innerHTML = '';
+        this.boardEl.className = 'xiangqi-board';
+        for (const position of ['top', 'bottom']) {
+            const palace = document.createElement('div');
+            palace.className = 'palace-' + position;
+            this.boardEl.appendChild(palace);
         }
-    }
-
-    renderBoard() {
-        const squares = document.querySelectorAll('.xiangqi-board .square');
-        // Clear pieces primarily, but squares structure is static
-        squares.forEach(sq => {
-            // Remove existing pieces if any
-            const existingPiece = sq.querySelector('.xiangqi-piece');
-            if (existingPiece) existingPiece.remove();
-        });
-
-        for (let r = 0; r < 10; r++) {
-            for (let c = 0; c < 9; c++) {
-                const code = this.board[r][c];
-                if (code) {
-                    const pieceData = this.pieces[code];
-                    const pieceEl = document.createElement('div');
-                    pieceEl.className = `xiangqi-piece ${pieceData.color}`;
-                    pieceEl.textContent = pieceData.symbol;
-
-                    // Find the correct square
-                    // Index = r * 9 + c
-                    const square = squares[r * 9 + c];
-                    square.appendChild(pieceEl);
-                }
-            }
+        this.squares = [];
+        for (let r = 0; r < 10; r++) for (let c = 0; c < 9; c++) {
+            const square = document.createElement('div');
+            square.className = 'square';
+            square.dataset.row = r;
+            square.dataset.col = c;
+            this.squares.push(square);
+            this.boardEl.appendChild(square);
         }
-    }
-
-    handleSquareClick(row, col) {
-        if (this.isGameOver) return;
-
-        const pieceCode = this.board[row][col];
-
-        if (this.selectedSquare) {
-            // Move logic
-            if (this.selectedSquare.row === row && this.selectedSquare.col === col) {
-                this.selectedSquare = null; // Deselect
-                this.clearHighlights();
-            } else {
-                // Validate move
-                const fromR = this.selectedSquare.row;
-                const fromC = this.selectedSquare.col;
-
-                if (this.isValidMove(fromR, fromC, row, col)) {
-                    // 1. Simulate move to check for Self-Check
-                    const fromPiece = this.board[fromR][fromC];
-                    const targetPiece = this.board[row][col];
-
-                    // Temp move
-                    this.board[row][col] = fromPiece;
-                    this.board[fromR][fromC] = null;
-
-                    const isSelfCheck = this.isCheck(this.turn);
-                    const isFlyingGen = this.isFlyingGeneral();
-
-                    // Undo temp move
-                    this.board[fromR][fromC] = fromPiece;
-                    this.board[row][col] = targetPiece;
-
-                    if (isSelfCheck) {
-                        alert("Nước đi không hợp lệ: Tướng đang bị chiếu!");
-                        return;
-                    }
-
-                    if (isFlyingGen) {
-                        alert("Lỗi: Hai tướng không được đối mặt (Lộ mặt tướng)!");
-                        return;
-                    }
-
-                    // 2. Execute Real Move
-                    // Track history
-                    this.history.push({
-                        from: { r: fromR, c: fromC },
-                        to: { r: row, c: col },
-                        captured: targetPiece,
-                        turn: this.turn
-                    });
-
-                    this.board[row][col] = fromPiece;
-                    this.board[fromR][fromC] = null;
-
-                    this.selectedSquare = null;
-                    this.turn = this.turn === 'red' ? 'black' : 'red';
-
-                    this.renderBoard();
-                    this.clearHighlights();
-
-                    // 3. Check for check / checkmate / stalemate
-                    this.checkGameState();
-                } else {
-                    this.selectedSquare = null;
-                    this.clearHighlights();
-                }
-            }
-        } else {
-            if (pieceCode) {
-                // Check turn
-                const pieceData = this.pieces[pieceCode];
-                if (pieceData.color !== this.turn) return;
-
-                // Start selection
-                this.selectedSquare = { row, col };
-                this.highlightSquare(row, col);
-            }
-        }
-    }
-
-    highlightSquare(row, col) {
-        this.clearHighlights();
-        const squares = document.querySelectorAll('.xiangqi-board .square');
-        const square = squares[row * 9 + col];
-        if (square) square.classList.add('selected');
-    }
-
-    clearHighlights() {
-        document.querySelectorAll('.xiangqi-board .square.selected').forEach(sq => {
-            sq.classList.remove('selected');
-        });
-    }
-
-    // ========================================
-    // Game state: check, checkmate, stalemate
-    // ========================================
-    checkGameState() {
-        const color = this.turn;
-        const inCheck = this.isCheck(color);
-
-        if (!this.hasAnyLegalMove(color)) {
-            this.isGameOver = true;
-            if (inCheck) {
-                const winner = color === 'red' ? 'Đen' : 'Đỏ';
-                this.updateStatus(`Chiếu bí! ${winner} thắng!`);
-                this.showGameOver(`Chiếu bí! ${winner} thắng!`);
-            } else {
-                this.updateStatus('Hòa - Hết nước đi!');
-                this.showGameOver('Hòa! Hết nước đi (Stalemate)');
-            }
-            return;
-        }
-
-        if (inCheck) {
-            this.updateStatus(`${color === 'red' ? 'Đỏ' : 'Đen'} bị chiếu!`);
-            this.showCheckAnimation();
-        } else {
-            this.updateStatus(`Lượt: ${color === 'red' ? 'Đỏ' : 'Đen'}`);
-        }
-    }
-
-    // Does the given side have at least one legal move (not leaving its own
-    // general in check and not exposing a flying-general situation)?
-    hasAnyLegalMove(color) {
-        for (let r = 0; r < 10; r++) {
-            for (let c = 0; c < 9; c++) {
-                const code = this.board[r][c];
-                if (!code || this.pieces[code].color !== color) continue;
-
-                for (let tr = 0; tr < 10; tr++) {
-                    for (let tc = 0; tc < 9; tc++) {
-                        if (r === tr && c === tc) continue;
-                        if (!this.isValidMove(r, c, tr, tc)) continue;
-
-                        const fromPiece = this.board[r][c];
-                        const target = this.board[tr][tc];
-                        this.board[tr][tc] = fromPiece;
-                        this.board[r][c] = null;
-                        const illegal = this.isCheck(color) || this.isFlyingGeneral();
-                        this.board[r][c] = fromPiece;
-                        this.board[tr][tc] = target;
-
-                        if (!illegal) return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    showGameOver(msg) {
-        const modal = document.getElementById('game-over-modal');
-        const message = document.getElementById('game-over-message');
-        const title = document.getElementById('game-over-title');
-        if (modal && message && title) {
-            title.textContent = 'Kết thúc!';
-            message.textContent = msg;
-            modal.classList.add('show');
-        }
-    }
-
-    updateStatus(msg) {
-        const status = document.getElementById('game-status');
-        if (status) status.textContent = msg;
     }
 
     newGame() {
-        this.init();
+        this.cancelAI();
+        this.board = XiangqiRules.createInitialBoard();
+        this.turn = 'red';
+        this.history = [];
+        this.captured = [];
+        this.lastMove = null;
+        this.selectedSquare = null;
+        this.isGameOver = false;
+        document.getElementById('game-over-modal').classList.remove('show');
+        this.flipBoard(this.playingAgainstAI && this.humanColor === 'black');
+        this.refresh();
+        this.scheduleAI();
+    }
+
+    flipBoard(flipped) {
+        this.boardEl.classList.toggle('xiangqi-flipped', flipped);
+    }
+
+    handleSquareClick(r, c) {
+        if (!this.active || this.isGameOver || this.aiThinking || this.playingAgainstAI && this.turn !== this.humanColor) return;
+        if (this.selectedSquare?.r === r && this.selectedSquare?.c === c) this.selectedSquare = null;
+        else if (XiangqiRules.colorOf(this.board[r][c]) === this.turn) this.selectedSquare = { r, c };
+        else if (this.selectedSquare) {
+            const move = this.legalMoves.find(m => m.from.r === this.selectedSquare.r && m.from.c === this.selectedSquare.c && m.to.r === r && m.to.c === c);
+            if (move) { this.makeMove(move); return; }
+            this.selectedSquare = null;
+        }
+        this.renderBoard();
+    }
+
+    makeMove(move) {
+        this.history.push({ board: this.board, turn: this.turn, lastMove: this.lastMove, captured: [...this.captured] });
+        const target = this.board[move.to.r][move.to.c];
+        if (target) this.captured.push(target);
+        this.board = XiangqiRules.applyMove(this.board, move);
+        this.lastMove = move;
+        this.turn = XiangqiRules.opponent(this.turn);
+        this.selectedSquare = null;
+        this.refresh();
+        this.scheduleAI();
+    }
+
+    refresh() {
+        this.legalMoves = XiangqiRules.generateLegalMoves(this.board, this.turn);
+        this.inCheck = XiangqiRules.isInCheck(this.board, this.turn);
+        this.isGameOver = this.legalMoves.length === 0;
+        const name = this.turn === 'red' ? 'Đỏ' : 'Đen';
+        if (this.isGameOver) {
+            const result = `${this.inCheck ? 'Chiếu bí' : 'Hết nước đi'}! ${this.turn === 'red' ? 'Đen' : 'Đỏ'} thắng!`;
+            this.updateStatus(result);
+            document.getElementById('game-over-title').textContent = 'Kết thúc!';
+            document.getElementById('game-over-message').textContent = result;
+            document.getElementById('game-over-modal').classList.add('show');
+        } else this.updateStatus(`Lượt: ${name}${this.inCheck ? ' — Chiếu tướng!' : ''}`);
+        document.querySelector('#turn-indicator span:last-child').textContent = `Lượt: ${name}`;
+        document.querySelector('#turn-indicator .turn-dot').className = `turn-dot ${this.turn === 'red' ? 'red-turn' : 'black-turn'}`;
+        this.renderBoard();
+    }
+
+    renderBoard() {
+        const king = this.inCheck ? XiangqiRules.findGeneral(this.board, this.turn) : null;
+        const hints = this.selectedSquare ? this.legalMoves.filter(m => m.from.r === this.selectedSquare.r && m.from.c === this.selectedSquare.c) : [];
+        this.squares.forEach(square => {
+            const r = Number(square.dataset.row), c = Number(square.dataset.col);
+            const code = this.board[r][c];
+            if (square.dataset.piece !== (code || '')) {
+                square.innerHTML = '';
+                if (code) {
+                    const piece = document.createElement('div');
+                    piece.className = 'xiangqi-piece ' + this.pieces[code].color;
+                    piece.textContent = this.pieces[code].symbol;
+                    square.appendChild(piece);
+                }
+                square.dataset.piece = code || '';
+            }
+            square.classList.toggle('selected', this.selectedSquare?.r === r && this.selectedSquare?.c === c);
+            square.classList.toggle('last-move', !!this.lastMove && [this.lastMove.from, this.lastMove.to].some(p => p.r === r && p.c === c));
+            square.classList.toggle('check', king?.r === r && king?.c === c);
+            const hint = hints.some(m => m.to.r === r && m.to.c === c);
+            square.classList.toggle('valid-move', hint && !code);
+            square.classList.toggle('valid-capture', hint && !!code);
+        });
+        for (const [color, id] of [['red', 'captured-white'], ['black', 'captured-black']]) {
+            document.getElementById(id).textContent = this.captured.filter(code => XiangqiRules.colorOf(code) === color).map(code => this.pieces[code].symbol).join(' ');
+        }
     }
 
     undoMove() {
-        if (this.history.length === 0) return;
-        const lastMove = this.history.pop();
-        const { from, to, captured, turn } = lastMove;
-
-        // Move piece back
-        const piece = this.board[to.r][to.c];
-        this.board[from.r][from.c] = piece;
-        this.board[to.r][to.c] = captured;
-
-        // Restore turn
-        this.turn = turn;
+        this.cancelAI();
+        // Pending AI reply: undo only the human move. Completed reply: undo the pair.
+        const count = this.playingAgainstAI && this.turn === this.humanColor ? 2 : 1;
+        for (let i = 0; i < count && this.history.length; i++) Object.assign(this, this.history.pop());
         this.selectedSquare = null;
-
-        // Render
-        this.renderBoard();
-        this.updateStatus(`Lượt: ${this.turn === 'red' ? 'Đỏ' : 'Đen'}`);
-        this.clearHighlights();
+        document.getElementById('game-over-modal').classList.remove('show');
+        this.refresh();
+        this.scheduleAI();
     }
 
-    isValidMove(fromR, fromC, toR, toC) {
-        const pieceCode = this.board[fromR][fromC];
-        if (!pieceCode) return false;
-
-        const piece = this.pieces[pieceCode];
-        const targetCode = this.board[toR][toC];
-
-        // Cannot capture own piece
-        if (targetCode) {
-            const targetPiece = this.pieces[targetCode];
-            if (targetPiece.color === piece.color) return false;
-        }
-
-        // Piece specific logic
-        switch (piece.name) {
-            case 'General': // Tướng/Soái
-                return this.isValidGeneralMove(fromR, fromC, toR, toC, piece.color);
-            case 'Advisor': // Sĩ
-                return this.isValidAdvisorMove(fromR, fromC, toR, toC, piece.color);
-            case 'Elephant': // Tượng
-                return this.isValidElephantMove(fromR, fromC, toR, toC, piece.color);
-            case 'Horse': // Mã
-                return this.isValidHorseMove(fromR, fromC, toR, toC);
-            case 'Chariot': // Xe
-                return this.isValidChariotMove(fromR, fromC, toR, toC);
-            case 'Cannon': // Pháo
-                return this.isValidCannonMove(fromR, fromC, toR, toC);
-            case 'Soldier': // Tốt/Binh
-                return this.isValidSoldierMove(fromR, fromC, toR, toC, piece.color);
-            default:
-                return false;
-        }
+    setAI(enabled, difficulty) {
+        this.cancelAI();
+        this.playingAgainstAI = enabled && Number(difficulty) > 0;
+        this.difficulty = Number(difficulty) || 4;
+        this.flipBoard(this.playingAgainstAI && this.humanColor === 'black');
+        this.scheduleAI();
     }
 
-    isValidGeneralMove(r1, c1, r2, c2, color) {
-        // Move 1 step orthogonal
-        const d = Math.abs(r1 - r2) + Math.abs(c1 - c2);
-        if (d !== 1) return false;
+    scheduleAI() { /* Worker search is added in T4. */ }
+    cancelAI() { this.aiThinking = false; }
 
-        // Must be in Palace
-        // Red Palace: r 7-9, c 3-5
-        // Black Palace: r 0-2, c 3-5
-        if (c2 < 3 || c2 > 5) return false;
-        if (color === 'red') {
-            if (r2 < 7 || r2 > 9) return false;
-        } else {
-            if (r2 < 0 || r2 > 2) return false;
-        }
-        return true;
+    updateStatus(message) {
+        document.getElementById('game-status').textContent = message;
     }
 
-    isValidAdvisorMove(r1, c1, r2, c2, color) {
-        // Move 1 step diagonal
-        if (Math.abs(r1 - r2) !== 1 || Math.abs(c1 - c2) !== 1) return false;
-
-        // Must be in Palace
-        if (c2 < 3 || c2 > 5) return false;
-        if (color === 'red') {
-            if (r2 < 7 || r2 > 9) return false;
-        } else {
-            if (r2 < 0 || r2 > 2) return false;
-        }
-        return true;
-    }
-
-    isValidElephantMove(r1, c1, r2, c2, color) {
-        // Move exactly 2 steps diagonal
-        if (Math.abs(r1 - r2) !== 2 || Math.abs(c1 - c2) !== 2) return false;
-
-        // Cannot cross river
-        // River is between r4 and r5
-        if (color === 'red') {
-            if (r2 < 5) return false; // Red elephant stays bottom
-        } else {
-            if (r2 > 4) return false; // Black elephant stays top
-        }
-
-        // Block eye (blocking point is the midpoint)
-        const midR = (r1 + r2) / 2;
-        const midC = (c1 + c2) / 2;
-        if (this.board[midR][midC]) return false;
-
-        return true;
-    }
-
-    isValidHorseMove(r1, c1, r2, c2) {
-        // L shape: 2 orth + 1 perp
-        const dr = r2 - r1;
-        const dc = c2 - c1;
-        const absDr = Math.abs(dr);
-        const absDc = Math.abs(dc);
-
-        if (!((absDr === 2 && absDc === 1) || (absDr === 1 && absDc === 2))) return false;
-
-        // Blocking legs
-        if (absDr === 2) {
-            const midR = r1 + (dr > 0 ? 1 : -1);
-            if (this.board[midR][c1]) return false;
-        } else {
-            const midC = c1 + (dc > 0 ? 1 : -1);
-            if (this.board[r1][midC]) return false;
-        }
-
-        return true;
-    }
-
-    isValidChariotMove(r1, c1, r2, c2) {
-        // Orthogonal only
-        if (r1 !== r2 && c1 !== c2) return false;
-
-        // Check path clear
-        return this.countPiecesBetween(r1, c1, r2, c2) === 0;
-    }
-
-    isValidCannonMove(r1, c1, r2, c2) {
-        // Orthogonal only
-        if (r1 !== r2 && c1 !== c2) return false;
-
-        const piecesBetween = this.countPiecesBetween(r1, c1, r2, c2);
-        const target = this.board[r2][c2];
-
-        if (!target) {
-            // Move: path must be clear
-            return piecesBetween === 0;
-        } else {
-            // Capture: must have exactly 1 piece between (screen)
-            return piecesBetween === 1;
-        }
-    }
-
-    isValidSoldierMove(r1, c1, r2, c2, color) {
-        const dr = r2 - r1;
-        const dc = c2 - c1;
-
-        // Cannot move backwards
-        // Red moves UP (-1), Black moves DOWN (+1)
-
-        // Check if moving backwards
-        if (color === 'red' && dr > 0) return false;
-        if (color === 'black' && dr < 0) return false;
-
-        // Must move 1 step total
-        if (Math.abs(dr) + Math.abs(dc) !== 1) return false;
-
-        // Check river crossing
-        const crossedRiver = color === 'red' ? r1 <= 4 : r1 >= 5;
-
-        if (!crossedRiver) {
-            // Must move forward only
-            if (Math.abs(dc) !== 0) return false;
-        }
-
-        return true;
-    }
-
-    countPiecesBetween(r1, c1, r2, c2) {
-        let count = 0;
-        if (r1 === r2) {
-            const minC = Math.min(c1, c2);
-            const maxC = Math.max(c1, c2);
-            for (let c = minC + 1; c < maxC; c++) {
-                if (this.board[r1][c]) count++;
-            }
-        } else {
-            const minR = Math.min(r1, r2);
-            const maxR = Math.max(r1, r2);
-            for (let r = minR + 1; r < maxR; r++) {
-                if (this.board[r][c1]) count++;
-            }
-        }
-        return count;
-    }
-
-    isFlyingGeneral() {
-        // Find Generals
-        let redGen = null;
-        let blackGen = null;
-
-        for (let r = 0; r < 10; r++) {
-            for (let c = 3; c <= 5; c++) { // Generals only in 3-5
-                const p = this.board[r][c];
-                if (p === 'R_K') redGen = { r, c };
-                if (p === 'B_K') blackGen = { r, c };
-            }
-        }
-
-        if (redGen && blackGen && redGen.c === blackGen.c) {
-            // Same column, check pieces between
-            if (this.countPiecesBetween(redGen.r, redGen.c, blackGen.r, blackGen.c) === 0) {
-                return true; // Flying General!
-            }
-        }
-        return false;
-    }
-
-    isCheck(color) {
-        // 1. Find the King
-        let kingPos = null;
-        const kingName = color === 'red' ? 'R_K' : 'B_K';
-
-        for (let r = 0; r < 10; r++) {
-            for (let c = 0; c < 9; c++) {
-                if (this.board[r][c] === kingName) {
-                    kingPos = { r, c };
-                    break;
-                }
-            }
-            if (kingPos) break;
-        }
-
-        if (!kingPos) return false; // Should not happen
-
-        // 2. Check if any enemy piece can move to King's position
-        for (let r = 0; r < 10; r++) {
-            for (let c = 0; c < 9; c++) {
-                const pieceCode = this.board[r][c];
-                if (pieceCode) {
-                    const piece = this.pieces[pieceCode];
-                    if (piece.color !== color) {
-                        // Check if this enemy piece can attack the King
-                        if (this.isValidMove(r, c, kingPos.r, kingPos.c)) {
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    showCheckAnimation() {
-        const status = document.getElementById('game-status');
-        const originalText = status.textContent;
-        status.textContent = "CHIẾU TƯỚNG!";
-        status.style.color = "red";
-        status.style.fontWeight = "bold";
-        status.style.transform = "scale(1.5)";
-        status.style.transition = "all 0.3s ease";
-
-        setTimeout(() => {
-            status.textContent = originalText;
-            status.style.color = "";
-            status.style.fontWeight = "";
-            status.style.transform = "scale(1)";
-        }, 2000);
-
-        // Optional: Visual effect on board overlay
-        const board = document.getElementById('chessboard');
-        const overlay = document.createElement('div');
-        overlay.className = 'check-overlay';
-        overlay.textContent = "CHIẾU TƯỚNG";
-        board.appendChild(overlay);
-
-        setTimeout(() => {
-            overlay.remove();
-        }, 1500);
+    destroy() {
+        this.cancelAI();
+        this.active = false;
+        this.boardEl.removeEventListener('click', this.onClick);
+        document.getElementById('xiangqi-side').removeEventListener('change', this.onSideChange);
+        document.getElementById('xiangqi-side-control').hidden = true;
     }
 }

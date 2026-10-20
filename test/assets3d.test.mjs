@@ -247,3 +247,46 @@ test('Caro board - squareToWorld / worldToSquare roundtrip for all 225 cells', (
 
     disposeBoards();
 });
+
+test('Board texture centers match squareToWorld exactly without margin distortion', () => {
+    // Chess 64 squares
+    const chessBoard = createChessBoard();
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const expected = chessBoard.squareToWorld(r, c);
+            const fromTexture = chessBoard.textureSquareToWorld(r, c);
+            assert.ok(
+                expected.distanceTo(fromTexture) < 1e-6,
+                `Chess square (${r},${c}) texture center must match squareToWorld: diff=${expected.distanceTo(fromTexture)}`
+            );
+        }
+    }
+
+    // Xiangqi 90 intersections
+    const xiangqiBoard = createXiangqiBoard();
+    for (let r = 0; r < 10; r++) {
+        for (let c = 0; c < 9; c++) {
+            const expected = xiangqiBoard.squareToWorld(r, c);
+            const fromTexture = xiangqiBoard.textureSquareToWorld(r, c);
+            assert.ok(
+                expected.distanceTo(fromTexture) < 1e-6,
+                `Xiangqi intersection (${r},${c}) texture center must match squareToWorld: diff=${expected.distanceTo(fromTexture)}`
+            );
+        }
+    }
+
+    // Caro 225 cells
+    const xoBoard = createXOBoard(15);
+    for (let r = 0; r < 15; r++) {
+        for (let c = 0; c < 15; c++) {
+            const expected = xoBoard.squareToWorld(r, c);
+            const fromTexture = xoBoard.textureSquareToWorld(r, c);
+            assert.ok(
+                expected.distanceTo(fromTexture) < 1e-6,
+                `Caro cell (${r},${c}) texture center must match squareToWorld: diff=${expected.distanceTo(fromTexture)}`
+            );
+        }
+    }
+
+    disposeBoards();
+});

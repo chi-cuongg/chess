@@ -47,27 +47,46 @@ class ChessGame {
         // Guard so button listeners are only bound once
         this._buttonsBound = false;
 
+        // DOM caching & event delegation
+        this.boardEl = null;
+        this.squares = [];
+        this._lastMoveEls = [];
+        this._checkEl = null;
+        this.boardClickHandler = null;
+        this.turnDotEl = null;
+        this.turnTextEl = null;
+        this.capturedWhiteEl = null;
+        this.capturedBlackEl = null;
+
         this.init();
     }
 
     init() {
         this.active = true;
+        this.boardEl = document.getElementById('chessboard');
         this.createBoard();
         this.setupEventListeners();
         this.newGame();
     }
 
     createBoard() {
-        const chessboard = document.getElementById('chessboard');
-        chessboard.innerHTML = '';
+        if (!this.boardEl) {
+            this.boardEl = document.getElementById('chessboard');
+        }
+        if (!this.boardEl) return;
+        this.boardEl.innerHTML = '';
+        this.squares = [];
+        this._lastMoveEls = [];
+        this._checkEl = null;
 
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
                 const square = document.createElement('div');
                 square.className = `square ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
-                square.dataset.row = row;
-                square.dataset.col = col;
-                chessboard.appendChild(square);
+                square.dataset.row = String(row);
+                square.dataset.col = String(col);
+                this.boardEl.appendChild(square);
+                this.squares.push(square);
             }
         }
     }
@@ -76,12 +95,19 @@ class ChessGame {
         // The board element can be replaced when switching game types, so the
         // click handler must be (re)bound on every init. Button handlers live on
         // stable elements and must only be bound once to avoid duplicates.
-        const chessboard = document.getElementById('chessboard');
-        chessboard.addEventListener('click', (e) => this.handleSquareClick(e));
+        if (!this.boardEl) {
+            this.boardEl = document.getElementById('chessboard');
+        }
+        if (this.boardEl) {
+            if (this.boardClickHandler) {
+                this.boardEl.removeEventListener('click', this.boardClickHandler);
+            }
+            this.boardClickHandler = (e) => this.handleSquareClick(e);
+            this.boardEl.addEventListener('click', this.boardClickHandler);
+        }
 
         if (this._buttonsBound) return;
         this._buttonsBound = true;
-
 
         // Promotion piece selection
         document.getElementById('promotion-pieces')?.addEventListener('click', (e) => {
@@ -98,7 +124,17 @@ class ChessGame {
         this.stopReplay();
         this.board = this.initialBoard.map(row => [...row]);
         this.currentTurn = 'white';
-        this.selectedSquare = null;
+        this.clearSelection();
+        if (this._lastMoveEls) {
+            for (let i = 0; i < this._lastMoveEls.length; i++) {
+                this._lastMoveEls[i].classList.remove('last-move');
+            }
+            this._lastMoveEls = [];
+        }
+        if (this._checkEl) {
+            this._checkEl.classList.remove('check');
+            this._checkEl = null;
+        }
         this.validMoves = [];
         this.enPassantTarget = null;
         this.castlingRights = {
@@ -172,50 +208,92 @@ class ChessGame {
         return this.halfmoveClock >= 100;
     }
 
+    ensureSquaresCached() {
+        if (!this.boardEl || !document.body.contains(this.boardEl)) {
+            this.boardEl = document.getElementById('chessboard');
+        }
+        if (!this.boardEl) return;
+        if (!this.squares || this.squares.length !== 64 || !this.boardEl.contains(this.squares[0])) {
+            const domSquares = this.boardEl.querySelectorAll('.square');
+            if (domSquares.length === 64) {
+                this.squares = Array.from(domSquares);
+            } else {
+                this.createBoard();
+            }
+        }
+    }
+
     renderBoard() {
-        const squares = document.querySelectorAll('.square');
+        this.ensureSquaresCached();
+        if (!this.squares || this.squares.length !== 64) return;
 
         // Compute check state a single time instead of once per square.
         const inCheck = isInCheck(this.board, this.currentTurn);
         const kingPos = inCheck ? findKing(this.board, this.currentTurn) : null;
 
-        squares.forEach(square => {
-            const row = parseInt(square.dataset.row);
-            const col = parseInt(square.dataset.col);
-            const piece = this.board[row][col];
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const idx = row * 8 + col;
+                const square = this.squares[idx];
+                const piece = this.board[row][col];
+                const code = piece || '';
 
-            // Clear square
-            square.innerHTML = '';
-            square.classList.remove('selected', 'valid-move', 'valid-capture', 'last-move', 'check');
-
-            // Add piece
-            if (piece) {
-                const pieceInfo = getPieceByCode(piece);
-                const pieceEl = document.createElement('div');
-                pieceEl.className = `piece ${pieceInfo.color}`;
-                pieceEl.textContent = pieceInfo.symbol;
-                square.appendChild(pieceEl);
-            }
-
-            // Highlight last move
-            if (this.lastMove) {
-                if ((row === this.lastMove.from.row && col === this.lastMove.from.col) ||
-                    (row === this.lastMove.to.row && col === this.lastMove.to.col)) {
-                    square.classList.add('last-move');
+                if (square.dataset.piece !== code) {
+                    if (piece) {
+                        const pieceInfo = getPieceByCode(piece);
+                        let pieceEl = square.firstElementChild;
+                        if (!pieceEl) {
+                            pieceEl = document.createElement('div');
+                            square.appendChild(pieceEl);
+                        }
+                        pieceEl.className = `piece ${pieceInfo.color}`;
+                        pieceEl.textContent = pieceInfo.symbol;
+                    } else {
+                        square.textContent = '';
+                    }
+                    square.dataset.piece = code;
                 }
             }
+        }
 
-            // Highlight king in check
-            if (kingPos && row === kingPos.row && col === kingPos.col) {
-                square.classList.add('check');
+        // Highlight last move: diff with previous lastMove elements
+        if (this._lastMoveEls) {
+            for (let i = 0; i < this._lastMoveEls.length; i++) {
+                this._lastMoveEls[i].classList.remove('last-move');
             }
-        });
+            this._lastMoveEls = [];
+        }
+        if (this.lastMove) {
+            const fromSquare = this.squares[this.lastMove.from.row * 8 + this.lastMove.from.col];
+            const toSquare = this.squares[this.lastMove.to.row * 8 + this.lastMove.to.col];
+            if (fromSquare) {
+                fromSquare.classList.add('last-move');
+                this._lastMoveEls.push(fromSquare);
+            }
+            if (toSquare) {
+                toSquare.classList.add('last-move');
+                this._lastMoveEls.push(toSquare);
+            }
+        }
+
+        // Highlight king in check: diff with previous check element
+        if (this._checkEl) {
+            this._checkEl.classList.remove('check');
+            this._checkEl = null;
+        }
+        if (kingPos) {
+            const checkEl = this.squares[kingPos.row * 8 + kingPos.col];
+            if (checkEl) {
+                checkEl.classList.add('check');
+                this._checkEl = checkEl;
+            }
+        }
 
         this.updateCapturedPieces();
     }
 
     handleSquareClick(e) {
-        if (this.isReplaying) return;
+        if (!this.active || this.isReplaying) return;
         if (this.isGameOver || this.pendingPromotion) return;
         if (this.playingAgainstAI && this.currentTurn === this.aiColor) return;
 
@@ -223,10 +301,10 @@ class ChessGame {
         if (window.onlineManager && window.onlineManager.isConnected && !window.onlineManager.isPlayerTurn()) return;
 
         const square = e.target.closest('.square');
-        if (!square) return;
+        if (!square || !this.boardEl || !this.boardEl.contains(square)) return;
 
-        const row = parseInt(square.dataset.row);
-        const col = parseInt(square.dataset.col);
+        const row = parseInt(square.dataset.row, 10);
+        const col = parseInt(square.dataset.col, 10);
 
         if (this.selectedSquare) {
             // Try to make a move
@@ -257,27 +335,40 @@ class ChessGame {
         this.selectedSquare = { row, col };
         this.validMoves = getLegalMoves(this.board, row, col, this.enPassantTarget, this.castlingRights);
 
-        // Update visual
-        const squares = document.querySelectorAll('.square');
-        squares[row * 8 + col].classList.add('selected');
+        if (!this.squares) return;
 
-        for (const move of this.validMoves) {
-            const targetSquare = squares[move.row * 8 + move.col];
-            if (this.board[move.row][move.col] || move.type === 'enpassant') {
-                targetSquare.classList.add('valid-capture');
-            } else {
-                targetSquare.classList.add('valid-move');
+        const selectedSquareEl = this.squares[row * 8 + col];
+        if (selectedSquareEl) {
+            selectedSquareEl.classList.add('selected');
+        }
+
+        for (let i = 0; i < this.validMoves.length; i++) {
+            const move = this.validMoves[i];
+            const targetSquare = this.squares[move.row * 8 + move.col];
+            if (targetSquare) {
+                if (this.board[move.row][move.col] || move.type === 'enpassant') {
+                    targetSquare.classList.add('valid-capture');
+                } else {
+                    targetSquare.classList.add('valid-move');
+                }
             }
         }
     }
 
     clearSelection() {
+        if (this.selectedSquare && this.squares) {
+            const sq = this.squares[this.selectedSquare.row * 8 + this.selectedSquare.col];
+            if (sq) sq.classList.remove('selected');
+        }
+        if (this.validMoves && this.squares) {
+            for (let i = 0; i < this.validMoves.length; i++) {
+                const move = this.validMoves[i];
+                const sq = this.squares[move.row * 8 + move.col];
+                if (sq) sq.classList.remove('valid-move', 'valid-capture');
+            }
+        }
         this.selectedSquare = null;
         this.validMoves = [];
-
-        document.querySelectorAll('.square').forEach(square => {
-            square.classList.remove('selected', 'valid-move', 'valid-capture');
-        });
     }
 
     makeMove(fromRow, fromCol, toRow, toCol, move) {
@@ -626,6 +717,9 @@ class ChessGame {
         this.stopReplay();
         this.active = false;
         this.pendingPromotion = null;
+        if (this.boardEl && this.boardClickHandler) {
+            this.boardEl.removeEventListener('click', this.boardClickHandler);
+        }
     }
 
     makeAIMove() {
@@ -778,28 +872,42 @@ class ChessGame {
     }
 
     updateUI() {
-        // Update turn indicator
-        const indicator = document.getElementById('turn-indicator');
-        const turnDot = indicator.querySelector('.turn-dot');
-        const turnText = indicator.querySelector('span:last-child');
-
-        turnDot.className = `turn-dot ${this.currentTurn === 'white' ? 'white-turn' : 'black-turn'}`;
-        turnText.textContent = `Lượt: ${this.currentTurn === 'white' ? 'Trắng' : 'Đen'}`;
+        if (!this.turnDotEl || !this.turnTextEl) {
+            const indicator = document.getElementById('turn-indicator');
+            if (indicator) {
+                this.turnDotEl = indicator.querySelector('.turn-dot');
+                this.turnTextEl = indicator.querySelector('span:last-child');
+            }
+        }
+        if (this.turnDotEl && this.turnTextEl) {
+            this.turnDotEl.className = `turn-dot ${this.currentTurn === 'white' ? 'white-turn' : 'black-turn'}`;
+            this.turnTextEl.textContent = `Lượt: ${this.currentTurn === 'white' ? 'Trắng' : 'Đen'}`;
+        }
     }
 
     updateCapturedPieces() {
-        const whiteContainer = document.getElementById('captured-white');
-        const blackContainer = document.getElementById('captured-black');
+        if (!this.capturedWhiteEl) this.capturedWhiteEl = document.getElementById('captured-white');
+        if (!this.capturedBlackEl) this.capturedBlackEl = document.getElementById('captured-black');
 
-        whiteContainer.innerHTML = this.capturedPieces.white.map(p => {
-            const info = getPieceByCode(p);
-            return `<span class="piece">${info.symbol}</span>`;
-        }).join('');
+        if (this.capturedWhiteEl) {
+            const whiteSymbols = this.capturedPieces.white.map(p => {
+                const info = getPieceByCode(p);
+                return `<span class="piece">${info.symbol}</span>`;
+            }).join('');
+            if (this.capturedWhiteEl.innerHTML !== whiteSymbols) {
+                this.capturedWhiteEl.innerHTML = whiteSymbols;
+            }
+        }
 
-        blackContainer.innerHTML = this.capturedPieces.black.map(p => {
-            const info = getPieceByCode(p);
-            return `<span class="piece">${info.symbol}</span>`;
-        }).join('');
+        if (this.capturedBlackEl) {
+            const blackSymbols = this.capturedPieces.black.map(p => {
+                const info = getPieceByCode(p);
+                return `<span class="piece">${info.symbol}</span>`;
+            }).join('');
+            if (this.capturedBlackEl.innerHTML !== blackSymbols) {
+                this.capturedBlackEl.innerHTML = blackSymbols;
+            }
+        }
     }
 
     updateStatus(message, type = '') {
@@ -896,6 +1004,10 @@ class ChessGame {
         this.updateStatus('▶ Đang phát lại ván đấu...');
 
         this.replayTimer = setInterval(() => {
+            if (!this.active || !this.isReplaying) {
+                this.stopReplay();
+                return;
+            }
             this.replayIndex++;
             if (this.replayIndex >= this.replaySnapshots.length) {
                 this.stopReplay();
@@ -919,6 +1031,7 @@ class ChessGame {
             this.updateStatus('Đã dừng phát lại.');
         }
         this.replayIndex = 0;
+        this.replaySnapshots = null;
     }
 }
 

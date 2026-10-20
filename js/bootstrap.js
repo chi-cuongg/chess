@@ -78,12 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // History Button
-    byId('history-btn')?.addEventListener('click', () => {
-        window.gameHistory.renderHistoryModal();
-        byId('history-modal')?.classList.add('show');
-    });
-
     // Close History Modal
     byId('close-history-btn')?.addEventListener('click', () => {
         byId('history-modal')?.classList.remove('show');

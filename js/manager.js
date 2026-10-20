@@ -1,107 +1,111 @@
+// Shared controller contract: init, newGame, undoMove, setAI, destroy.
 class GameManager {
     constructor() {
-        this.currentGame = null;
         this.gameType = 'chess';
-        this.init();
+        this.currentGame = window.chessGame;
+        const selector = document.getElementById('game-type-selector');
+        selector.addEventListener('change', e => this.switchGame(e.target.value));
+        this.bindGlobalEvents();
+        this.updateUI();
+        new MutationObserver(() => this.updateOnlineLock()).observe(
+            document.getElementById('online-status'), { childList: true, subtree: true });
+        try {
+            const saved = localStorage.getItem('board-game-type');
+            if (!new URLSearchParams(location.search).has('room')) this.switchGame(saved);
+        } catch (e) { /* Storage may be unavailable. */ }
     }
 
-    init() {
-        // Initialize with Chess by default
-        this.currentGame = window.chessGame; // Existing instance
+    inOnlineRoom() {
+        const online = window.onlineManager;
+        return !!(online && (online.isConnected || online.roomId && online.peer));
+    }
 
-        // Setup selector listener
+    updateOnlineLock() {
+        const locked = this.inOnlineRoom();
         const selector = document.getElementById('game-type-selector');
-        if (selector) {
-            selector.addEventListener('change', (e) => this.switchGame(e.target.value));
-        }
-
-        this.bindGlobalEvents();
+        selector.disabled = locked;
+        selector.title = locked ? 'Không thể đổi loại cờ khi đang trong phòng online.' : '';
+        document.getElementById('play-ai-btn').disabled = locked;
+        document.getElementById('ai-difficulty').disabled = locked;
     }
 
     bindGlobalEvents() {
-        document.getElementById('new-game-btn')?.addEventListener('click', () => {
-            if (this.currentGame && typeof this.currentGame.newGame === 'function') {
+        for (const id of ['new-game-btn', 'play-again-btn']) {
+            document.getElementById(id).addEventListener('click', () => {
+                document.getElementById('game-over-modal').classList.remove('show');
+                if (this.inOnlineRoom()) return;
                 this.currentGame.newGame();
-            } else if (this.currentGame && typeof this.currentGame.init === 'function') {
-                this.currentGame.init();
-            }
+            });
+        }
+        document.getElementById('undo-btn').addEventListener('click', () => {
+            if (!this.inOnlineRoom()) this.currentGame.undoMove();
         });
+        document.getElementById('play-ai-btn').addEventListener('click', () => {
+            if (!this.inOnlineRoom()) this.setAI(!this.currentGame.playingAgainstAI);
+        });
+        document.getElementById('ai-difficulty').addEventListener('change', () => {
+            if (!this.inOnlineRoom()) this.setAI(this.currentGame.playingAgainstAI);
+        });
+        document.getElementById('history-btn').addEventListener('click', () => {
+            if (this.gameType !== 'chess') return;
+            window.gameHistory.renderHistoryModal();
+            document.getElementById('history-modal').classList.add('show');
+        });
+    }
 
-        document.getElementById('undo-btn')?.addEventListener('click', () => {
-            if (this.currentGame && typeof this.currentGame.undoMove === 'function') {
-                this.currentGame.undoMove();
-            }
-        });
-
-        document.getElementById('play-again-btn')?.addEventListener('click', () => {
-            document.getElementById('game-over-modal')?.classList.remove('show');
-            if (this.currentGame && typeof this.currentGame.newGame === 'function') {
-                this.currentGame.newGame();
-            } else if (this.currentGame && typeof this.currentGame.init === 'function') {
-                this.currentGame.init();
-            }
-        });
+    setAI(enabled) {
+        this.currentGame.setAI(enabled, document.getElementById('ai-difficulty').value);
+        this.updateUI();
     }
 
     switchGame(type) {
-        if (this.gameType === type) return;
-
-        // Cleanup current game if needed
-        const oldBoard = document.getElementById('chessboard');
-        const newBoard = oldBoard.cloneNode(false); // Clone without children to be safe and clear listeners
-        oldBoard.parentNode.replaceChild(newBoard, oldBoard);
-
-        const chessboard = newBoard;
-        chessboard.innerHTML = '';
-        chessboard.className = 'chessboard'; // Default reset
-
-        this.gameType = type;
-
-        switch (type) {
-
-            case 'chess':
-                chessboard.className = 'chessboard';
-                this.currentGame = window.chessGame;
-                this.currentGame.init(); // Re-init chess
-                break;
-            case 'xiangqi':
-                chessboard.className = 'xiangqi-board'; // Reset class completely
-                if (!window.xiangqiGame) window.xiangqiGame = new XiangqiGame();
-                this.currentGame = window.xiangqiGame;
-                this.currentGame.init();
-                break;
-            case 'xo':
-                chessboard.className = 'xo-board'; // Reset class completely
-                if (!window.xoGame) window.xoGame = new XOGame();
-                this.currentGame = window.xoGame;
-                this.currentGame.init();
-                break;
+        if (!['chess', 'xiangqi', 'xo'].includes(type) || type === this.gameType) return;
+        if (this.inOnlineRoom()) {
+            document.getElementById('game-type-selector').value = this.gameType;
+            this.currentGame.updateStatus('Không thể đổi loại cờ khi đang trong phòng online.');
+            return;
         }
-
-        // Update labels
-        this.updateUI(type);
+        this.currentGame.destroy();
+        document.querySelectorAll('.modal.show').forEach(el => el.classList.remove('show'));
+        document.querySelectorAll('.flipped').forEach(el => el.classList.remove('flipped'));
+        const oldBoard = document.getElementById('chessboard');
+        const board = oldBoard.cloneNode(false);
+        board.className = type === 'chess' ? 'chessboard' : `${type}-board`;
+        oldBoard.replaceWith(board);
+        this.gameType = type;
+        if (type === 'chess') this.currentGame = window.chessGame;
+        else {
+            const key = type === 'xiangqi' ? 'xiangqiGame' : 'xoGame';
+            if (!window[key]) window[key] = type === 'xiangqi' ? new XiangqiGame() : new XOGame();
+            this.currentGame = window[key];
+            // Legacy UI adapters, replaced by each controller's implementation below.
+            if (!this.currentGame.destroy) this.currentGame.destroy = function () { this.active = false; };
+            if (!this.currentGame.setAI) this.currentGame.setAI = function () {
+                this.playingAgainstAI = false;
+                this.updateStatus('AI sẽ được bổ sung cho loại cờ này.');
+            };
+        }
+        this.currentGame.init();
+        try { localStorage.setItem('board-game-type', type); } catch (e) { /* Optional persistence. */ }
+        this.updateUI();
     }
 
-    updateUI(type) {
-        const rowLabels = document.querySelector('.row-labels');
-        const colLabels = document.querySelector('.col-labels');
-        const capturedSections = document.querySelectorAll('.captured-section');
-
-        if (type === 'chess') {
-            rowLabels.style.display = 'flex';
-            colLabels.style.display = 'flex';
-            capturedSections.forEach(el => el.style.display = 'block');
-        } else {
-            rowLabels.style.display = 'none';
-            colLabels.style.display = 'none';
-            capturedSections.forEach(el => el.style.display = 'none');
+    updateUI() {
+        const chess = this.gameType === 'chess';
+        document.getElementById('game-type-selector').value = this.gameType;
+        for (const selector of ['.row-labels', '.col-labels', '#online-panel', '#history-btn']) {
+            document.querySelector(selector).style.display = chess ? '' : 'none';
         }
+        document.getElementById('history-btn').disabled = !chess;
+        document.querySelectorAll('.captured-section').forEach(el => {
+            el.style.display = this.gameType === 'xo' ? 'none' : '';
+        });
+        const ai = this.currentGame.playingAgainstAI;
+        document.getElementById('play-ai-btn').textContent = ai ? '👥 Chơi 2 người' : '🤖 Chơi với AI';
+        this.updateOnlineLock();
     }
 }
 
-// Global initialization.
-// game.js registers its DOMContentLoaded listener first and creates
-// window.chessGame, so it is guaranteed to exist by the time this runs.
 document.addEventListener('DOMContentLoaded', () => {
     window.gameManager = new GameManager();
 });

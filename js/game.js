@@ -51,6 +51,7 @@ class ChessGame {
     }
 
     init() {
+        this.active = true;
         this.createBoard();
         this.setupEventListeners();
         this.newGame();
@@ -81,12 +82,11 @@ class ChessGame {
         if (this._buttonsBound) return;
         this._buttonsBound = true;
 
-        document.getElementById('play-ai-btn')?.addEventListener('click', () => this.toggleAI());
 
         // Promotion piece selection
         document.getElementById('promotion-pieces')?.addEventListener('click', (e) => {
             const piece = e.target.closest('.piece');
-            if (piece && this.pendingPromotion) {
+            if (this.active && piece && this.pendingPromotion) {
                 const promoteTo = piece.dataset.piece;
                 this.completePromotion(promoteTo);
             }
@@ -94,6 +94,7 @@ class ChessGame {
     }
 
     newGame() {
+        this.cancelAI();
         this.stopReplay();
         this.board = this.initialBoard.map(row => [...row]);
         this.currentTurn = 'white';
@@ -386,7 +387,7 @@ class ChessGame {
         // AI move
         if (this.playingAgainstAI && !this.isGameOver && this.currentTurn === this.aiColor) {
             this.updateStatus('AI đang suy nghĩ...');
-            setTimeout(() => this.makeAIMove(), 500);
+            this.scheduleAI();
         }
     }
 
@@ -473,7 +474,7 @@ class ChessGame {
         // AI move
         if (this.playingAgainstAI && !this.isGameOver && this.currentTurn === this.aiColor) {
             this.updateStatus('AI đang suy nghĩ...');
-            setTimeout(() => this.makeAIMove(), 500);
+            this.scheduleAI();
         }
     }
 
@@ -565,6 +566,7 @@ class ChessGame {
     }
 
     undoMove() {
+        this.cancelAI();
         if (this.isReplaying) return;
         if (this.moveHistory.length === 0) return;
         if (this.isGameOver) {
@@ -596,40 +598,38 @@ class ChessGame {
         this.updateStatus(`Lượt: ${this.currentTurn === 'white' ? 'Trắng' : 'Đen'}`);
     }
 
-    toggleAI() {
-        const button = document.getElementById('play-ai-btn');
-        const difficultySelect = document.getElementById('ai-difficulty');
+    setAI(enabled, difficulty) {
+        this.cancelAI();
+        this.playingAgainstAI = enabled && Number(difficulty) > 0;
+        this.aiDepth = Number(difficulty) || 4;
+        if (this.playingAgainstAI && this.currentTurn === this.aiColor) this.scheduleAI();
+    }
 
-        if (this.playingAgainstAI) {
-            this.playingAgainstAI = false;
-            button.innerHTML = '<span class="btn-icon">🤖</span> Chơi với AI';
-            button.classList.remove('btn-secondary');
-            button.classList.add('btn-accent');
-        } else {
-            const difficulty = parseInt(difficultySelect.value);
-            if (difficulty === 0) {
-                this.playingAgainstAI = false;
-                this.updateStatus('Chế độ 2 người chơi');
-                return;
-            }
+    scheduleAI() {
+        clearTimeout(this.aiTimer);
+        const generation = this.aiGeneration;
+        this.aiTimer = setTimeout(() => {
+            if (generation === this.aiGeneration) this.makeAIMove();
+        }, 100);
+    }
 
-            this.playingAgainstAI = true;
-            this.aiDepth = difficulty;
-            button.innerHTML = '<span class="btn-icon">👥</span> Chơi 2 người';
-            button.classList.remove('btn-accent');
-            button.classList.add('btn-secondary');
-            this.updateStatus('Chế độ chơi với AI');
+    cancelAI() {
+        this.aiGeneration = (this.aiGeneration || 0) + 1;
+        clearTimeout(this.aiTimer);
+        if (this.aiWorker) this.aiWorker.terminate();
+        this.aiWorker = null;
+        this.aiThinking = false;
+    }
 
-            // If it's AI's turn, make a move
-            if (this.currentTurn === this.aiColor && !this.isGameOver) {
-                this.updateStatus('AI đang suy nghĩ...');
-                setTimeout(() => this.makeAIMove(), 500);
-            }
-        }
+    destroy() {
+        this.cancelAI();
+        this.stopReplay();
+        this.active = false;
+        this.pendingPromotion = null;
     }
 
     makeAIMove() {
-        if (this.isGameOver || this.aiThinking) return;
+        if (!this.active || !this.playingAgainstAI || this.currentTurn !== this.aiColor || this.isReplaying || this.isGameOver || this.aiThinking) return;
 
         // Prefer a Web Worker so the (potentially slow) search does not block
         // the UI. Falls back to a synchronous search if workers are unavailable
@@ -650,7 +650,9 @@ class ChessGame {
                 enPassantTarget: this.enPassantTarget,
                 castlingRights: this.castlingRights
             };
+            const generation = this.aiGeneration;
             const onMessage = (e) => {
+                if (generation !== this.aiGeneration || !this.active) return;
                 worker.removeEventListener('message', onMessage);
                 this.aiThinking = false;
                 this.applyAIMove(e.data ? e.data.bestMove : null);
@@ -690,7 +692,7 @@ class ChessGame {
             if (this.aiThinking) {
                 this.aiThinking = false;
                 if (this.playingAgainstAI && !this.isGameOver && this.currentTurn === this.aiColor) {
-                    setTimeout(() => this.makeAIMove(), 0);
+                    this.scheduleAI();
                 }
             }
         };
@@ -868,6 +870,8 @@ class ChessGame {
     }
 
     startReplay(game) {
+        if (!this.active) return;
+        this.cancelAI();
         this.stopReplay();
         if (!game || !game.moves || game.moves.length === 0) return;
 

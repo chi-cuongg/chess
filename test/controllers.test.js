@@ -61,7 +61,7 @@ function environment() {
         Worker, console
     });
     for (const file of ['pieces', 'moves', 'ai', 'game', 'theme', 'manager', 'history']) {
-        vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/' + file + '.js'), 'utf8'), context);
+        vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/js/' + file + '.js'), 'utf8'), context);
     }
     const classes = vm.runInContext('({ ChessGame, ThemeSwitcher, GameManager, GameHistory })', context);
     class HeadlessGame extends classes.ChessGame { init() {} }

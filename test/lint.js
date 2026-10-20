@@ -14,11 +14,11 @@ const root = path.join(__dirname, '..');
 function collectJsFiles(dir) {
     const out = [];
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-        if (entry.name === 'node_modules' || entry.name === '.git') continue;
+        if (entry.name === 'node_modules' || entry.name === '.git' || entry.name === 'dist') continue;
         const full = path.join(dir, entry.name);
         if (entry.isDirectory()) {
             out.push(...collectJsFiles(full));
-        } else if (entry.name.endsWith('.js')) {
+        } else if (/\.(?:js|mjs)$/.test(entry.name)) {
             out.push(full);
         }
     }
@@ -29,7 +29,7 @@ const files = collectJsFiles(root);
 let failures = 0;
 
 for (const file of files) {
-    const res = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
+    const res = spawnSync(process.execPath, file.includes(path.sep + 'src' + path.sep) ? ['--input-type=module', '--check'] : ['--check', file], { encoding: 'utf8', input: file.includes(path.sep + 'src' + path.sep) ? fs.readFileSync(file, 'utf8') : undefined });
     if (res.status !== 0) {
         failures++;
         console.error(`  FAIL ${path.relative(root, file)}`);

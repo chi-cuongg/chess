@@ -5,14 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="
-        default-src 'self' file:;
-        script-src 'self' file: https://unpkg.com;
-        style-src 'self' file: 'unsafe-inline' https://fonts.googleapis.com;
-        font-src 'self' file: https://fonts.gstatic.com;
-        img-src 'self' file: data:;
-        media-src 'self' file: blob:;
-        worker-src 'self' file: blob:;
-        connect-src 'self' file: https://0.peerjs.com wss://0.peerjs.com https://unpkg.com;
+        default-src 'self';
+        script-src 'self' https://unpkg.com;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        font-src 'self' https://fonts.gstatic.com;
+        img-src 'self' data:;
+        media-src 'self' blob:;
+        worker-src 'self' blob:;
+        connect-src 'self' https://0.peerjs.com wss://0.peerjs.com https://unpkg.com;
         object-src 'none';
         base-uri 'self';
         form-action 'none';">
@@ -246,6 +246,7 @@
     <script src="js/xo.js"></script>
     <script src="js/manager.js"></script>
     <script src="js/bootstrap.js"></script>
+    <script type="module" src="/src/main.js"></script>
 </body>
 
 </html>

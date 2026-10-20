@@ -12,7 +12,7 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.join(__dirname, '..');
-const sources = ['js/pieces.js', 'js/moves.js', 'js/ai.js']
+const sources = ['public/js/pieces.js', 'public/js/moves.js', 'public/js/ai.js']
     .map(f => fs.readFileSync(path.join(root, f), 'utf8'))
     .join('\n');
 

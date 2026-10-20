@@ -1,18 +1,21 @@
 {
   "name": "chess-game",
   "version": "1.0.0",
-  "description": "Ứng dụng chơi cờ vua trên Windows",
-  "main": "main.js",
+  "description": "Ứng dụng web chơi cờ vua, cờ tướng và Caro",
   "scripts": {
-    "start": "live-server --port=3000 --open=/index.html",
-    "electron": "electron .",
+    "dev": "vite --host 127.0.0.1",
+    "start": "npm run dev",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
     "test": "node test/chess.test.js && node test/xiangqi.test.js && node test/xo.test.js && node test/controllers.test.js",
     "lint": "node test/lint.js"
   },
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^40.0.0",
-    "live-server": "^1.2.2"
+    "vite": "5.4.21"
+  },
+  "dependencies": {
+    "three": "0.170.0"
   }
 }

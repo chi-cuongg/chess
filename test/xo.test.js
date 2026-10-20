@@ -1,6 +1,6 @@
 const assert = require('assert');
-const rules = require('../js/xo-rules');
-const ai = require('../js/xo-ai');
+const rules = require('../public/js/xo-rules');
+const ai = require('../public/js/xo-ai');
 const empty = () => Array.from({ length: 15 }, () => Array(15).fill(null));
 let count = 0;
 function test(name, fn) { fn(); count++; console.log('  ok   ' + name); }

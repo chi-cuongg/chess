@@ -1,5 +1,5 @@
 const assert = require('assert');
-const rules = require('../js/xiangqi-rules');
+const rules = require('../public/js/xiangqi-rules');
 let count = 0;
 function test(name, fn) { fn(); count++; console.log('  ok   ' + name); }
 function empty() {
@@ -54,7 +54,7 @@ test('applyMove and legal generation do not mutate input', () => {
     assert.equal(JSON.stringify(b), before); assert.notDeepEqual(next, b);
 });
 
-const ai = require('../js/xiangqi-ai');
+const ai = require('../public/js/xiangqi-ai');
 test('AI returns a legal move without mutating the board', () => {
     const b = rules.createInitialBoard(), before = JSON.stringify(b);
     const move = ai.findBestMove(b, 'red', { timeMs: 100 });

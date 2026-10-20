@@ -182,6 +182,8 @@ Lệnh kiểm tra cơ bản: `npm test` (12 test engine cờ vua) và `npm run l
 
 ---
 
+- T12 — DONE — Web-only Vite 5.4.21 + three 0.170.0; bỏ Electron/run.bat, giữ classic scripts tại public/js và SRI PeerJS; 59 test, lint 24 file, build PASS; preview chạy 3 game và Worker AI cả ba trả nước hợp lệ; đã xem Orca screenshot C:/Users/Admin/AppData/Local/Temp/chess-wave1-qa/t12.png. Vite cảnh báo classic script không bundle là dự kiến vì public/js được copy nguyên trạng.
+
 # GIAI ĐOẠN 2 — Web-only + 3D Graphics & Animation
 
 > Quyết định của Orchestrator (Tech Lead). Worker KHÔNG tự đổi các quyết định này; nếu thấy không khả thi,

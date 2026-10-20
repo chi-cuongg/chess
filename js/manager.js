@@ -30,6 +30,32 @@ class GameManager {
     }
 
     bindGlobalEvents() {
+        // Closing promotion cancels the pending choice before any piece is moved.
+        const closeModal = modal => {
+            if (modal.id === 'promotion-modal' && this.gameType === 'chess') {
+                this.currentGame.pendingPromotion = null;
+                this.currentGame.clearSelection();
+            }
+            modal.classList.remove('show');
+            document.getElementById('new-game-btn').focus();
+        };
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', e => {
+                if (e.target === modal || e.target.closest('.modal-close')) closeModal(modal);
+            });
+        });
+        document.addEventListener('keydown', e => {
+            const modal = document.querySelector('.modal.show');
+            if (!modal) return;
+            if (e.key === 'Escape') { e.preventDefault(); closeModal(modal); }
+            if (e.key === 'Tab') {
+                const controls = [...modal.querySelectorAll('button, input, select, [tabindex="0"]')].filter(el => !el.disabled);
+                const first = controls[0], last = controls[controls.length - 1];
+                if (first && !modal.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+                else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+                else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+            }
+        });
         for (const id of ['new-game-btn', 'play-again-btn']) {
             document.getElementById(id).addEventListener('click', () => {
                 document.getElementById('game-over-modal').classList.remove('show');
@@ -92,6 +118,12 @@ class GameManager {
 
     updateUI() {
         const chess = this.gameType === 'chess';
+        const name = { chess: 'Cờ vua', xiangqi: 'Cờ tướng', xo: 'Cờ Caro' }[this.gameType];
+        document.getElementById('game-title').textContent = name;
+        document.title = name + ' — Bàn cờ Việt';
+        document.getElementById('captured-first-title').textContent = chess ? '⚪ Quân trắng bị bắt' : '🔴 Quân đỏ bị bắt';
+        document.getElementById('captured-second-title').textContent = '⚫ Quân đen bị bắt';
+        document.getElementById('chessboard').setAttribute('aria-label', 'Bàn ' + name.toLowerCase());
         document.getElementById('game-type-selector').value = this.gameType;
         for (const selector of ['.row-labels', '.col-labels', '#online-panel', '#history-btn']) {
             document.querySelector(selector).style.display = chess ? '' : 'none';

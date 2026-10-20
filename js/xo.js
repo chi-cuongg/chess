@@ -91,7 +91,7 @@ class XOGame {
 
     undoMove() {
         this.cancelAI();
-        const count = this.playingAgainstAI && this.turn === 'X' ? 2 : 1;
+        const count = this.playingAgainstAI && this.history[this.history.length - 1]?.player === 'O' ? 2 : 1;
         for (let i = 0; i < count && this.history.length; i++) {
             const move = this.history.pop();
             this.board[move.r][move.c] = null;

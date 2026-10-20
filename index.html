@@ -16,7 +16,7 @@
         object-src 'none';
         base-uri 'self';
         form-action 'none';">
-    <title>Cờ Vua - Chess Game</title>
+    <title>Cờ vua — Bàn cờ Việt</title>
     <link rel="stylesheet" href="styles.css">
     <link
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap"
@@ -31,7 +31,8 @@
     <div class="app-container">
         <!-- Header -->
         <header class="header">
-            <h1 class="title">♔ Chess Master ♚</h1>
+            <h1 id="game-title" class="game-title">Cờ vua</h1>
+            <p class="title">♔ Chess Master ♚</p>
         </header>
 
         <!-- Main Content -->
@@ -46,7 +47,7 @@
                             <span class="btn-icon">🏠</span> Tạo phòng
                         </button>
                         <div class="join-room">
-                            <input type="text" id="room-code-input" placeholder="Mã phòng" maxlength="6">
+                            <input type="text" id="room-code-input" aria-label="Mã phòng" placeholder="Mã phòng" maxlength="6">
                             <button id="join-room-btn" class="btn btn-join">Vào</button>
                         </div>
                     </div>
@@ -67,18 +68,18 @@
 
                 <!-- Captured Pieces White -->
                 <div class="captured-section">
-                    <h3>⚪ Quân trắng bị bắt</h3>
+                    <h3 id="captured-first-title">⚪ Quân trắng bị bắt</h3>
                     <div id="captured-white" class="captured-pieces"></div>
                 </div>
 
                 <!-- Captured Pieces Black -->
                 <div class="captured-section">
-                    <h3>⚫ Quân đen bị bắt</h3>
+                    <h3 id="captured-second-title">⚫ Quân đen bị bắt</h3>
                     <div id="captured-black" class="captured-pieces"></div>
                 </div>
 
                 <!-- Turn Indicator -->
-                <div class="turn-indicator" id="turn-indicator">
+                <div class="turn-indicator" id="turn-indicator" role="status" aria-live="polite">
                     <span class="turn-dot white-turn"></span>
                     <span>Lượt: Trắng</span>
                 </div>
@@ -114,7 +115,7 @@
                     </button>
 
                     <div class="ai-controls">
-                        <label>🤖 Độ khó AI:</label>
+                        <label for="ai-difficulty">🤖 Độ khó AI:</label>
                         <select id="ai-difficulty">
                             <option value="0">Chơi 2 người</option>
                             <option value="2">Dễ</option>
@@ -128,7 +129,7 @@
                     </button>
 
                     <div class="game-controls">
-                        <label>🎮 Loại cờ:</label>
+                        <label for="game-type-selector">🎮 Loại cờ:</label>
                         <select id="game-type-selector">
                             <option value="chess">♟️ Cờ Vua</option>
                             <option value="xiangqi">🧝 Cờ Tướng</option>
@@ -145,7 +146,7 @@
                     </div>
 
                     <div class="theme-controls">
-                        <label>🎨 Giao diện:</label>
+                        <label for="theme-selector">🎨 Giao diện:</label>
                         <select id="theme-selector">
                             <option value="harry-potter">⚡ Harry Potter</option>
                             <option value="greek">🏛️ Hy Lạp Cổ Đại</option>
@@ -160,8 +161,8 @@
                     <h3>💬 Chat</h3>
                     <div id="chat-messages" class="chat-messages"></div>
                     <div class="chat-input-container">
-                        <input type="text" id="chat-input" placeholder="Nhập tin nhắn..." maxlength="200">
-                        <button id="chat-send-btn" class="btn-send">➤</button>
+                        <input type="text" id="chat-input" aria-label="Tin nhắn" placeholder="Nhập tin nhắn..." maxlength="200">
+                        <button id="chat-send-btn" class="btn-send" aria-label="Gửi tin nhắn">➤</button>
                     </div>
                 </div>
             </aside>
@@ -175,20 +176,22 @@
 
         <!-- Status Bar -->
         <div id="status-bar" class="status-bar">
-            <span id="game-status">Sẵn sàng bắt đầu!</span>
+            <span id="game-status" role="status" aria-live="polite">Sẵn sàng bắt đầu!</span>
         </div>
 
         <!-- Promotion Modal -->
-        <div id="promotion-modal" class="modal">
+        <div id="promotion-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="promotion-title">
             <div class="modal-content">
-                <h2>Chọn quân phong cấp</h2>
+                <h2 id="promotion-title">Chọn quân phong cấp</h2>
+                <button class="modal-close" aria-label="Đóng chọn phong cấp">×</button>
                 <div class="promotion-pieces" id="promotion-pieces"></div>
             </div>
         </div>
 
         <!-- Game Over Modal -->
-        <div id="game-over-modal" class="modal">
+        <div id="game-over-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="game-over-title">
             <div class="modal-content game-over-content">
+                <button class="modal-close" aria-label="Đóng kết quả">×</button>
                 <h2 id="game-over-title">Kết thúc!</h2>
                 <p id="game-over-message"></p>
                 <button id="play-again-btn" class="btn btn-primary">Chơi lại</button>
@@ -196,16 +199,16 @@
         </div>
 
         <!-- Share Link Modal -->
-        <div id="share-modal" class="modal">
+        <div id="share-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="share-title">
             <div class="modal-content share-content">
-                <h2>📤 Chia sẻ phòng</h2>
+                <h2 id="share-title">📤 Chia sẻ phòng</h2>
                 <p>Gửi link hoặc mã phòng cho bạn bè:</p>
                 <div class="room-code-display">
                     <span id="room-code-text"></span>
-                    <button id="copy-code-btn" class="btn btn-small">📋</button>
+                    <button id="copy-code-btn" class="btn btn-small" aria-label="Sao chép mã phòng">📋</button>
                 </div>
                 <div class="share-link-container">
-                    <input type="text" id="share-link" readonly>
+                    <input type="text" id="share-link" aria-label="Liên kết phòng" readonly>
                     <button id="copy-link-btn" class="btn btn-primary">📋 Copy Link</button>
                 </div>
                 <p class="share-waiting">⏳ Đang chờ đối thủ kết nối...</p>
@@ -214,9 +217,9 @@
         </div>
 
         <!-- History Modal -->
-        <div id="history-modal" class="modal">
+        <div id="history-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="history-title">
             <div class="modal-content history-content">
-                <h2>📜 Lịch sử ván đấu</h2>
+                <h2 id="history-title">📜 Lịch sử ván đấu</h2>
                 <div id="history-list" class="history-list"></div>
                 <div class="history-modal-actions">
                     <button id="clear-history-btn" class="btn btn-danger">🗑️ Xóa tất cả</button>

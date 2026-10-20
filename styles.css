@@ -2956,3 +2956,73 @@ body {
         opacity: 1;
     }
 }
+/* ========================================
+   Shared layout and accessible controls (T9)
+   Theme animations/effects are maintained separately in T8.
+   ======================================== */
+:root {
+    --board-size: min(90vw, 80vh, calc(100vw - 520px), 600px);
+    --square-size: calc(var(--board-size) / 8);
+}
+.app-container { padding: 16px 20px; }
+.header { padding: 8px 0 18px; }
+.game-title { font: 700 clamp(1.5rem, 4vw, 2.1rem) 'Roboto', sans-serif; color: inherit; }
+.header .title { font-size: 1rem !important; padding: 8px 12px !important; margin-top: 8px; max-width: 100%; }
+.main-content { gap: 24px; }
+.side-panel { flex: 0 0 185px; min-width: 0; }
+.board-container, .board-wrapper { min-width: 0; max-width: 100%; }
+.board-wrapper { padding: 10px !important; gap: 6px; }
+.row-labels { padding-right: 4px; flex-shrink: 0; }
+.col-labels { margin-left: 22px; }
+.chessboard { width: var(--board-size); height: var(--board-size); grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(8, minmax(0, 1fr)); flex-shrink: 0; }
+.chessboard .square { width: 100%; height: 100%; }
+.chessboard .piece { font-size: calc(var(--square-size) * 0.75); }
+.xiangqi-board { width: min(540px, 80vh, calc(100vw - 520px)); flex-shrink: 0; }
+.xo-board { width: min(600px, max(334px, min(90vw, 80vh, calc(100vw - 520px)))); flex-shrink: 0; }
+.controls { width: 100%; }
+button, select, input { font: inherit; min-height: 40px; }
+button, select { touch-action: manipulation; }
+button:disabled, select:disabled { opacity: 0.5; cursor: not-allowed; }
+button:focus-visible, select:focus-visible, input:focus-visible, [tabindex]:focus-visible {
+    outline: 3px solid #51b8ff; outline-offset: 3px;
+}
+.game-controls, #xiangqi-side-control { display: flex; flex-direction: column; gap: 8px; }
+[hidden] { display: none !important; }
+.game-controls label, #xiangqi-side-control label { font-size: 0.8rem; }
+.controls select { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid currentColor; border-radius: 6px; }
+.theme-harry-potter { --control-bg: #241b10; --control-fg: #ffe6ad; }
+.theme-greek { --control-bg: #fff8e8; --control-fg: #493410; }
+.theme-cyber { --control-bg: #081e26; --control-fg: #b0ffee; }
+.theme-vampire { --control-bg: #200c16; --control-fg: #ffd9e5; }
+.controls select, .controls select option { background-color: var(--control-bg); color: var(--control-fg); }
+.game-title, .game-controls label, #xiangqi-side-control label { color: var(--control-fg); }
+.modal { padding: 16px; }
+.modal-content { position: relative; min-width: 0; width: min(640px, 100%); max-width: min(640px, 100%); max-height: 90dvh; overflow-y: auto; padding: 28px 20px; }
+.modal-content h2 { padding: 0 20px; overflow-wrap: anywhere; }
+.modal-close { position: absolute; right: 4px; top: 4px; width: 40px; border: 0; border-radius: 6px; background: var(--control-bg); color: var(--control-fg); font-size: 1.5rem; cursor: pointer; }
+.promotion-pieces { gap: 8px; flex-wrap: wrap; }
+.history-item { flex-wrap: wrap; gap: 10px; }
+.history-info { min-width: 0; overflow-wrap: anywhere; }
+.history-modal-actions { flex-wrap: wrap; }
+.history-item, .share-link-container, .room-code-display { min-width: 0; max-width: 100%; }
+.share-link-container input { min-width: 0; }
+.status-bar { overflow-wrap: anywhere; }
+@media (max-width: 850px) {
+    :root { --board-size: min(90vw, 80vh, calc(100vw - 64px), 600px); }
+    .app-container { padding: 10px 6px; }
+    .main-content { flex-direction: column; align-items: center; gap: 18px; }
+    .board-container { order: 0; }
+    .right-panel { order: 1; }
+    .left-panel { order: 2; }
+    .side-panel { flex: none; width: min(600px, 100%); gap: 12px; }
+    .side-panel .controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; }
+    .side-panel .controls > * { min-width: 0; }
+    .controls .btn { height: 100%; min-height: 44px; padding: 10px 6px; font-size: 0.75rem; letter-spacing: 0; }
+    .board-wrapper { padding: 1px !important; }
+    .xiangqi-board { width: min(540px, 88vw, 72vh); }
+    .xo-board { width: min(600px, max(334px, min(90vw, 80vh))); }
+    .captured-section { flex: 1 1 140px; }
+    .online-panel, .turn-indicator, .chat-panel { width: 100%; }
+    .header .title { font-size: 0.9rem !important; }
+    .modal-content { padding: 32px 12px 18px; }
+}

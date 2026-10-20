@@ -54,3 +54,23 @@ test('applyMove and legal generation do not mutate input', () => {
     assert.equal(JSON.stringify(b), before); assert.notDeepEqual(next, b);
 });
 console.log(count + ' Xiangqi tests passed');
+
+const ai = require('../js/xiangqi-ai');
+test('AI returns a legal move without mutating the board', () => {
+    const b = rules.createInitialBoard(), before = JSON.stringify(b);
+    const move = ai.findBestMove(b, 'red', { timeMs: 100 });
+    assert(rules.generateLegalMoves(b, 'red').some(m => JSON.stringify(m) === JSON.stringify(move)));
+    assert.equal(JSON.stringify(b), before);
+});
+test('AI finds mate in one', () => {
+    const b = empty(); b[1][3] = 'R_R'; b[1][5] = 'R_R'; b[2][4] = 'R_R';
+    const move = ai.findBestMove(b, 'red', { timeMs: 1000 });
+    assert(rules.isCheckmate(rules.applyMove(b, move), 'black'));
+});
+test('AI resumable fallback respects time budget and no legal moves', () => {
+    const b = empty(); b[1][4] = 'R_R'; b[1][3] = 'R_R'; b[1][5] = 'R_R';
+    assert.equal(ai.findBestMove(b, 'black', { timeMs: 20 }), null);
+    const start = Date.now(); const search = ai.createSearch(rules.createInitialBoard(), 'red', { timeMs: 30 });
+    let state; do { state = search.step(3); } while (!state.done);
+    assert(state.bestMove); assert(Date.now() - start < 500);
+});

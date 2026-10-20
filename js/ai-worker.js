@@ -4,17 +4,18 @@
 // Runs the minimax search off the main thread so the UI stays responsive.
 // Only pure logic files are loaded here (no DOM access).
 
-importScripts('pieces.js', 'moves.js', 'ai.js');
+importScripts('pieces.js', 'moves.js', 'ai.js', 'xiangqi-rules.js', 'xiangqi-ai.js');
 
 self.onmessage = (e) => {
-    const { board, color, depth, enPassantTarget, castlingRights } = e.data || {};
+    const { game, requestId, difficulty, board, color, depth, enPassantTarget, castlingRights } = e.data || {};
 
     let bestMove = null;
     try {
-        bestMove = findBestMove(board, color, depth, enPassantTarget, castlingRights);
+        bestMove = game === 'xiangqi' ? XiangqiAI.findBestMove(board, color, { difficulty })
+            : findBestMove(board, color, depth, enPassantTarget, castlingRights);
     } catch (err) {
         bestMove = null;
     }
 
-    self.postMessage({ bestMove });
+    self.postMessage({ game, requestId, bestMove });
 };

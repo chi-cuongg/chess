@@ -163,3 +163,4 @@ Lệnh kiểm tra cơ bản: `npm test` (12 test engine cờ vua) và `npm run l
 - T1 — DONE — Manager điều phối nút chung; hủy AI/replay, khóa phòng online, lưu loại cờ. Test/lint PASS; kiểm tra UI tổng hợp ở T10.
 - T2 — DONE — Module luật thuần, không mutate board; 13 test cờ tướng PASS cùng 12 test cờ vua; lint tự quét file mới PASS.
 - T3 — DONE — UI dùng rules, delegation, gợi ý/chiếu/nước cuối/quân bị ăn, undo theo lượt AI và chọn Đen/lật bàn. Test/lint PASS; UI sẽ kiểm tra tổng hợp T10.
+- T4 — DONE — AI negamax/alpha-beta, iterative deepening, MVV-LVA và vị trí; Worker có request id, fallback chia lát 8ms, hủy khi undo/new/destroy. 16 test cờ tướng và lint PASS.

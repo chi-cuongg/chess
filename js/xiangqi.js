@@ -168,8 +168,50 @@ class XiangqiGame {
         this.scheduleAI();
     }
 
-    scheduleAI() { /* Worker search is added in T4. */ }
-    cancelAI() { this.aiThinking = false; }
+    scheduleAI() {
+        if (!this.active || !this.playingAgainstAI || this.isGameOver || this.turn === this.humanColor || this.aiThinking) return;
+        this.aiThinking = true;
+        this.updateStatus('AI đang suy nghĩ...');
+        const requestId = this.requestId;
+        const accept = move => {
+            if (requestId !== this.requestId || !this.active || !this.aiThinking) return;
+            this.aiThinking = false;
+            this.worker?.terminate();
+            this.worker = null;
+            const legal = this.legalMoves.find(m => move && m.from.r === move.from.r && m.from.c === move.from.c && m.to.r === move.to.r && m.to.c === move.to.c);
+            if (legal) this.makeMove(legal);
+            else this.refresh();
+        };
+        const fallback = () => {
+            if (requestId !== this.requestId || !this.active) return;
+            this.worker?.terminate();
+            this.worker = null;
+            const search = XiangqiAI.createSearch(this.board, this.turn, { difficulty: this.difficulty });
+            const step = () => {
+                if (requestId !== this.requestId || !this.active) return;
+                const state = search.step(8);
+                if (state.done) accept(state.bestMove);
+                else this.aiTimer = setTimeout(step, 0);
+            };
+            this.aiTimer = setTimeout(step, 0);
+        };
+        try {
+            this.worker = new Worker('js/ai-worker.js');
+            this.worker.onmessage = e => {
+                if (e.data.requestId === requestId) accept(e.data.bestMove);
+            };
+            this.worker.onerror = fallback;
+            this.worker.postMessage({ game: 'xiangqi', requestId, board: this.board, color: this.turn, difficulty: this.difficulty });
+        } catch (error) { fallback(); }
+    }
+
+    cancelAI() {
+        this.requestId = (this.requestId || 0) + 1;
+        clearTimeout(this.aiTimer);
+        this.worker?.terminate();
+        this.worker = null;
+        this.aiThinking = false;
+    }
 
     updateStatus(message) {
         document.getElementById('game-status').textContent = message;

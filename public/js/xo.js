@@ -33,19 +33,46 @@ class XOGame {
         this.history = [];
         this.isGameOver = false;
         this.winningLine = null;
+        this.moveId = (this.moveId || 0) + 1;
         document.getElementById('game-over-modal').classList.remove('show');
         this.refresh();
     }
 
     handleClick(r, c) {
+        return this.selectSquare(r, c);
+    }
+
+    selectSquare(r, c) {
+        if (!Number.isInteger(r) || !Number.isInteger(c) || r < 0 || r >= this.size || c < 0 || c >= this.size) return;
         if (!this.active || this.isGameOver || this.aiThinking || this.board[r][c] || this.playingAgainstAI && this.turn === 'O') return;
         this.makeMove({ r, c });
+    }
+
+    getState() {
+        const point = p => ({ row: p.r, col: p.c });
+        const last = this.history?.[this.history.length - 1];
+        return JSON.parse(JSON.stringify({
+            game: 'xo', rows: this.size, cols: this.size, board: this.board, turn: this.turn,
+            selected: null, hints: [], lastMove: last ? { from: point(last), to: point(last) } : null,
+            captured: null, check: null, winLine: this.winningLine?.map(point) || null,
+            gameOver: !!this.isGameOver, flipped: false, aiThinking: !!this.aiThinking,
+            moveId: this.moveId || 0
+        }));
+    }
+
+    emitState() {
+        if (!this.board || !window.dispatchEvent || typeof CustomEvent === 'undefined') return;
+        const detail = this.getState(), key = JSON.stringify(detail);
+        if (key === this.stateKey) return;
+        this.stateKey = key;
+        window.dispatchEvent(new CustomEvent('game:state', { detail }));
     }
 
     makeMove(move) {
         const { r, c } = move;
         if (this.board[r][c] || this.isGameOver) return;
         this.board[r][c] = this.turn;
+        this.moveId = (this.moveId || 0) + 1;
         this.history.push({ r, c, player: this.turn });
         this.winningLine = XORules.checkWin(this.board, r, c);
         this.isGameOver = !!this.winningLine || XORules.isFull(this.board);
@@ -65,6 +92,7 @@ class XOGame {
         document.querySelector('#turn-indicator span:last-child').textContent = `Lượt: ${this.turn}`;
         document.querySelector('#turn-indicator .turn-dot').className = `turn-dot ${this.turn === 'X' ? 'red-turn' : 'white-turn'}`;
         this.renderBoard();
+        this.emitState();
     }
 
     renderBoard() {
@@ -91,6 +119,7 @@ class XOGame {
 
     undoMove() {
         this.cancelAI();
+        this.moveId = (this.moveId || 0) + 1;
         const count = this.playingAgainstAI && this.history[this.history.length - 1]?.player === 'O' ? 2 : 1;
         for (let i = 0; i < count && this.history.length; i++) {
             const move = this.history.pop();
@@ -117,6 +146,7 @@ class XOGame {
         this.aiThinking = true;
         this.updateStatus('AI đang suy nghĩ...');
         this.renderBoard();
+        this.emitState();
         const requestId = this.requestId;
         const accept = move => {
             if (requestId !== this.requestId || !this.active || !this.aiThinking) return;

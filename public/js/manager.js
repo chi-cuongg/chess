@@ -50,6 +50,7 @@ class GameManager {
             if (modal.id === 'promotion-modal' && this.gameType === 'chess') {
                 this.currentGame.pendingPromotion = null;
                 this.currentGame.clearSelection();
+                this.currentGame.emitState();
             }
             modal.classList.remove('show');
             document.getElementById('new-game-btn').focus();
@@ -122,6 +123,7 @@ class GameManager {
             this.currentGame = window[key];
         }
         this.currentGame.init();
+        this.currentGame.emitState?.();
         // Ambient effects restart with fresh timers; no old capture can fire.
         window.themeSwitcher?.applyEffectsState();
         try { localStorage.setItem('board-game-type', type); } catch (e) { /* Optional persistence. */ }

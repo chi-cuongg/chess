@@ -70,6 +70,8 @@ class XiangqiGame {
         this.lastMove = null;
         this.selectedSquare = null;
         this.isGameOver = false;
+        this.inCheck = false;
+        this.advanceState();
         document.getElementById('game-over-modal').classList.remove('show');
         this.flipBoard(this.playingAgainstAI && this.humanColor === 'black');
         this.refresh();
@@ -77,11 +79,19 @@ class XiangqiGame {
     }
 
     flipBoard(flipped) {
+        this.isFlipped = !!flipped;
         this.boardEl.classList.toggle('xiangqi-flipped', flipped);
+        this.emitState();
     }
 
     handleSquareClick(r, c) {
+        return this.selectSquare(r, c);
+    }
+
+    selectSquare(r, c) {
+        if (!Number.isInteger(r) || !Number.isInteger(c) || r < 0 || r >= 10 || c < 0 || c >= 9) return;
         if (!this.active || this.isGameOver || this.aiThinking || this.playingAgainstAI && this.turn !== this.humanColor) return;
+        this.lastCaptured = null;
         if (this.selectedSquare?.r === r && this.selectedSquare?.c === c) this.selectedSquare = null;
         else if (XiangqiRules.colorOf(this.board[r][c]) === this.turn) this.selectedSquare = { r, c };
         else if (this.selectedSquare) {
@@ -90,12 +100,44 @@ class XiangqiGame {
             this.selectedSquare = null;
         }
         this.renderBoard();
+        this.emitState();
+    }
+
+    getState() {
+        const point = p => p ? { row: p.r, col: p.c } : null;
+        const hints = this.selectedSquare ? (this.legalMoves || []).filter(m =>
+            m.from.r === this.selectedSquare.r && m.from.c === this.selectedSquare.c).map(m => ({
+            ...point(m.to), capture: !!this.board[m.to.r][m.to.c]
+        })) : [];
+        return JSON.parse(JSON.stringify({
+            game: 'xiangqi', rows: 10, cols: 9, board: this.board, turn: this.turn,
+            selected: point(this.selectedSquare), hints,
+            lastMove: this.lastMove ? { from: point(this.lastMove.from), to: point(this.lastMove.to) } : null,
+            captured: this.lastCaptured || null,
+            check: this.inCheck ? point(XiangqiRules.findGeneral(this.board, this.turn)) : null,
+            winLine: null, gameOver: !!this.isGameOver, flipped: !!this.isFlipped,
+            aiThinking: !!this.aiThinking, moveId: this.moveId || 0
+        }));
+    }
+
+    emitState() {
+        if (!this.board || !window.dispatchEvent || typeof CustomEvent === 'undefined') return;
+        const detail = this.getState(), key = JSON.stringify(detail);
+        if (key === this.stateKey) return;
+        this.stateKey = key;
+        window.dispatchEvent(new CustomEvent('game:state', { detail }));
+    }
+
+    advanceState(captured = null) {
+        this.moveId = (this.moveId || 0) + 1;
+        this.lastCaptured = captured;
     }
 
     makeMove(move) {
         this.history.push({ board: this.board, turn: this.turn, lastMove: this.lastMove, captured: [...this.captured] });
         const target = this.board[move.to.r][move.to.c];
         if (target) this.captured.push(target);
+        this.advanceState(target ? { row: move.to.r, col: move.to.c, piece: target } : null);
         this.board = XiangqiRules.applyMove(this.board, move);
         this.lastMove = move;
         this.turn = XiangqiRules.opponent(this.turn);
@@ -119,6 +161,7 @@ class XiangqiGame {
         document.querySelector('#turn-indicator span:last-child').textContent = `Lượt: ${name}`;
         document.querySelector('#turn-indicator .turn-dot').className = `turn-dot ${this.turn === 'red' ? 'red-turn' : 'black-turn'}`;
         this.renderBoard();
+        this.emitState();
     }
 
     renderBoard() {
@@ -155,6 +198,7 @@ class XiangqiGame {
         const count = this.playingAgainstAI && this.turn === this.humanColor ? 2 : 1;
         for (let i = 0; i < count && this.history.length; i++) Object.assign(this, this.history.pop());
         this.selectedSquare = null;
+        this.advanceState();
         document.getElementById('game-over-modal').classList.remove('show');
         this.refresh();
         this.scheduleAI();
@@ -166,11 +210,13 @@ class XiangqiGame {
         this.difficulty = Number(difficulty) || 4;
         this.flipBoard(this.playingAgainstAI && this.humanColor === 'black');
         this.scheduleAI();
+        this.emitState();
     }
 
     scheduleAI() {
         if (!this.active || !this.playingAgainstAI || this.isGameOver || this.turn === this.humanColor || this.aiThinking) return;
         this.aiThinking = true;
+        this.emitState();
         this.updateStatus('AI đang suy nghĩ...');
         const requestId = this.requestId;
         const accept = move => {

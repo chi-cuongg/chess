@@ -17,7 +17,7 @@ function loadRuntime() {
 const viewModules = import.meta.glob('./3d/views/*View.js');
 export const viewRegistry = {
     chess: { load: () => import('./3d/views/chessView.js'), exportName: 'ChessView' },
-    xiangqi: { module: './3d/views/xiangqiView.js', exportName: 'XiangqiView' },
+    xiangqi: { load: () => import('./3d/views/xiangqiView.js'), exportName: 'XiangqiView' },
     xo: { module: './3d/views/xoView.js', exportName: 'XOView' }
 };
 

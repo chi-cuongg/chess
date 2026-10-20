@@ -6,6 +6,7 @@ class GameManager {
         const selector = document.getElementById('game-type-selector');
         selector.addEventListener('change', e => this.switchGame(e.target.value));
         this.bindGlobalEvents();
+        this.setupBoardSizing();
         this.updateUI();
         new MutationObserver(() => this.updateOnlineLock()).observe(
             document.getElementById('online-status'), { childList: true, subtree: true });
@@ -13,6 +14,20 @@ class GameManager {
             const saved = localStorage.getItem('board-game-type');
             if (!new URLSearchParams(location.search).has('room')) this.switchGame(saved);
         } catch (e) { /* Storage may be unavailable. */ }
+    }
+
+    setupBoardSizing() {
+        const header = document.querySelector('.header');
+        const update = () => {
+            document.documentElement.style.setProperty('--header-height', `${header.getBoundingClientRect().height}px`);
+        };
+        update();
+        if (typeof ResizeObserver !== 'undefined') {
+            this.headerObserver = new ResizeObserver(update);
+            this.headerObserver.observe(header);
+        } else window.addEventListener('resize', update);
+        // Fonts may arrive after the initial layout. Re-measure their actual height.
+        document.fonts?.ready.then(update);
     }
 
     inOnlineRoom() {
@@ -122,7 +137,7 @@ class GameManager {
         document.getElementById('captured-second-title').textContent = '⚫ Quân đen bị bắt';
         document.getElementById('chessboard').setAttribute('aria-label', 'Bàn ' + name.toLowerCase());
         document.getElementById('game-type-selector').value = this.gameType;
-        for (const selector of ['.row-labels', '.col-labels', '#online-panel', '#history-btn']) {
+        for (const selector of ['.row-labels', '.col-labels', '#online-panel', '#chat-panel', '#history-btn']) {
             document.querySelector(selector).style.display = chess ? '' : 'none';
         }
         document.getElementById('history-btn').disabled = !chess;

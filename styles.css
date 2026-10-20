@@ -2,7 +2,6 @@
    🎨 MULTI-THEME CHESS STYLES
    ======================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=IM+Fell+English:ital@0;1&family=Philosopher:ital,wght@0,400;0,700;1,400&display=swap');
 
 /* ========================================
    BASE VARIABLES (Shared)
@@ -497,7 +496,7 @@ body {
    ⚡ HARRY POTTER THEME ⚡
    ======================================== */
 .theme-harry-potter {
-    font-family: 'IM Fell English', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     background:
         radial-gradient(ellipse at top, rgba(75, 0, 130, 0.15) 0%, transparent 50%),
         radial-gradient(ellipse at bottom, rgba(0, 0, 50, 0.3) 0%, transparent 50%),
@@ -537,7 +536,7 @@ body {
 }
 
 .theme-harry-potter .title {
-    font-family: 'Cinzel Decorative', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     font-size: 2.4rem;
     font-weight: 700;
     color: #ffd700;
@@ -559,7 +558,7 @@ body {
 }
 
 .theme-harry-potter .captured-section h3 {
-    font-family: 'Cinzel', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     color: #ffd700;
 }
 
@@ -569,7 +568,7 @@ body {
 }
 
 .theme-harry-potter .turn-indicator {
-    font-family: 'Cinzel', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     background: linear-gradient(135deg, rgba(26, 26, 46, 0.9), rgba(18, 18, 31, 0.95));
     border: 2px solid rgba(255, 215, 0, 0.4);
     box-shadow: 0 0 20px rgba(75, 0, 130, 0.2);
@@ -606,7 +605,7 @@ body {
 }
 
 .theme-harry-potter .board-labels {
-    font-family: 'Cinzel', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     color: #ffd700;
     text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
 }
@@ -658,7 +657,7 @@ body {
 }
 
 .theme-harry-potter .btn {
-    font-family: 'Cinzel', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
 }
 
 .theme-harry-potter .btn-primary {
@@ -682,7 +681,7 @@ body {
 
 .theme-harry-potter .ai-controls label,
 .theme-harry-potter .theme-controls label {
-    font-family: 'Cinzel', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     color: #ffd700;
 }
 
@@ -727,7 +726,7 @@ body {
 }
 
 .theme-harry-potter .modal-content h2 {
-    font-family: 'Cinzel Decorative', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     color: #ffd700;
     text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
 }
@@ -746,7 +745,7 @@ body {
    🏛️ ANCIENT GREEK THEME 🏛️
    ======================================== */
 .theme-greek {
-    font-family: 'Philosopher', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     background:
         linear-gradient(180deg,
             #1a3a5c 0%,
@@ -777,7 +776,7 @@ body {
 }
 
 .theme-greek .title {
-    font-family: 'Cinzel Decorative', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     font-size: 2.4rem;
     font-weight: 700;
     color: #daa520;
@@ -804,7 +803,7 @@ body {
 }
 
 .theme-greek .captured-section h3 {
-    font-family: 'Cinzel', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     color: #8b4513;
 }
 
@@ -814,7 +813,7 @@ body {
 }
 
 .theme-greek .turn-indicator {
-    font-family: 'Cinzel', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     background: linear-gradient(180deg, #f5f5dc, #d4c4a0);
     border: 3px solid #daa520;
     color: #2c1810;
@@ -864,7 +863,7 @@ body {
 }
 
 .theme-greek .board-labels {
-    font-family: 'Cinzel', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     color: #8b4513;
     text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.5);
 }
@@ -924,7 +923,7 @@ body {
 }
 
 .theme-greek .btn {
-    font-family: 'Cinzel', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
 }
 
 .theme-greek .btn-primary {
@@ -959,7 +958,7 @@ body {
 
 .theme-greek .ai-controls label,
 .theme-greek .theme-controls label {
-    font-family: 'Cinzel', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     color: #8b4513;
 }
 
@@ -1004,7 +1003,7 @@ body {
 }
 
 .theme-greek .modal-content h2 {
-    font-family: 'Cinzel Decorative', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     color: #8b4513;
 }
 
@@ -1432,7 +1431,7 @@ body {
    🧛 VAMPIRE THEME 🦇
    ======================================== */
 .theme-vampire {
-    font-family: 'IM Fell English', 'Times New Roman', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     background:
         radial-gradient(ellipse at top, rgba(80, 0, 0, 0.3) 0%, transparent 50%),
         radial-gradient(ellipse at bottom, rgba(0, 0, 0, 0.8) 0%, transparent 50%),
@@ -1502,7 +1501,7 @@ body {
 }
 
 .theme-vampire .title {
-    font-family: 'Cinzel Decorative', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     font-size: 2.4rem;
     font-weight: 700;
     color: #8b0000;
@@ -1528,7 +1527,7 @@ body {
 }
 
 .theme-vampire .captured-section h3 {
-    font-family: 'Cinzel', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     color: #8b0000;
     text-shadow: 0 0 5px rgba(139, 0, 0, 0.5);
 }
@@ -1539,7 +1538,7 @@ body {
 }
 
 .theme-vampire .turn-indicator {
-    font-family: 'Cinzel', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     background: linear-gradient(180deg, #1a0010, #0a0008);
     border: 2px solid #8b0000;
     color: #d4a5a5;
@@ -1612,7 +1611,7 @@ body {
 }
 
 .theme-vampire .board-labels {
-    font-family: 'Cinzel', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     color: #8b0000;
     text-shadow: 0 0 5px rgba(139, 0, 0, 0.5);
 }
@@ -1698,7 +1697,7 @@ body {
 }
 
 .theme-vampire .btn {
-    font-family: 'Cinzel', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
 }
 
 .theme-vampire .btn-primary {
@@ -1728,7 +1727,7 @@ body {
 
 .theme-vampire .ai-controls label,
 .theme-vampire .theme-controls label {
-    font-family: 'Cinzel', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     color: #8b0000;
 }
 
@@ -1786,7 +1785,7 @@ body {
 }
 
 .theme-vampire .modal-content h2 {
-    font-family: 'Cinzel Decorative', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     color: #8b0000;
     text-shadow: 0 0 10px rgba(139, 0, 0, 0.5);
 }
@@ -2025,7 +2024,7 @@ body {
 
 .spell-text {
     position: fixed;
-    font-family: 'Cinzel Decorative', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     font-size: 1.4rem;
     color: #ffd700;
     text-shadow:
@@ -2154,7 +2153,7 @@ body {
 
 .greek-text {
     position: fixed;
-    font-family: 'Cinzel', serif;
+    font-family: 'Playfair Display', 'Times New Roman', serif;
     font-size: 1.6rem;
     color: #daa520;
     text-shadow:
@@ -2965,7 +2964,7 @@ body.effects-disabled .flying-bat {
     display: grid;
     grid-template-columns: repeat(9, 1fr);
     grid-template-rows: repeat(10, 1fr);
-    width: min(540px, 88vw, 72vh);
+    width: var(--xiangqi-size);
     aspect-ratio: 9 / 10;
     background: #dcb35c;
     border: 4px solid #8b4513;
@@ -3028,27 +3027,27 @@ body.effects-disabled .flying-bat {
    ======================================== */
 .xo-board {
     display: grid; grid-template-columns: repeat(15, 1fr); grid-template-rows: repeat(15, 1fr);
-    width: min(600px, max(334px, min(90vw, 80vh)));
-    aspect-ratio: 1; border: 2px solid #634819; background: #f7edc5; margin: auto;
+    width: var(--xo-size);
+    aspect-ratio: 1; border: 2px solid var(--caro-border); background: var(--caro-bg); margin: auto;
 }
 .xo-board .square {
-    width: 100%; height: 100%; min-width: 22px; min-height: 22px;
-    border: 1px solid #aa9b78; box-shadow: none; background: transparent;
+    width: 100%; height: 100%; min-width: 0; min-height: 0;
+    border: 1px solid var(--caro-line); box-shadow: none; background: transparent;
     cursor: pointer; font-size: clamp(16px, 3.5vw, 28px); font-weight: bold;
     position: relative;
 }
-.xo-board .square.last-move { background: #ffdd86; box-shadow: inset 0 0 0 2px #935400; }
-.xo-board .square.winning-cell { background: #a0df91; }
+.xo-board .square.last-move { background: var(--caro-last); box-shadow: inset 0 0 0 2px var(--caro-border); }
+.xo-board .square.winning-cell { background: var(--caro-win); }
 .xo-piece { width: 100%; height: 100%; display: grid; place-items: center; }
-.xo-piece.x { color: #ac1525; }
-.xo-piece.o { color: #153fb1; }
+.xo-piece.x { color: var(--caro-x); }
+.xo-piece.o { color: var(--caro-o); }
 @media (hover: hover) {
     .xo-board:not(.locked) .square[data-piece='']:hover::after {
         content: attr(data-preview); opacity: 0.4; position: absolute; inset: 0;
         display: grid; place-items: center; pointer-events: none;
     }
-    .xo-board[data-turn='X']:not(.locked) .square[data-piece='']:hover::after { content: 'X'; color: #ac1525; }
-    .xo-board[data-turn='O']:not(.locked) .square[data-piece='']:hover::after { content: 'O'; color: #153fb1; }
+    .xo-board[data-turn='X']:not(.locked) .square[data-piece='']:hover::after { content: 'X'; color: var(--caro-x); }
+    .xo-board[data-turn='O']:not(.locked) .square[data-piece='']:hover::after { content: 'O'; color: var(--caro-o); }
 }
 
 /* Hide labels for non-chess games by default via JS */
@@ -3091,7 +3090,13 @@ body.effects-disabled .flying-bat {
    Theme animations/effects are maintained separately in T8.
    ======================================== */
 :root {
-    --board-size: min(90vw, 80vh, calc(100vw - 520px), 600px);
+    /* Reserve 120px for app/main padding, the board frame and a-h labels.
+       Header height is measured once and whenever its font/size changes. */
+    --board-height-limit: max(80px, calc(100dvh - var(--header-height, 160px) - 120px));
+    --board-width-limit: calc(100vw - 520px);
+    --board-size: min(90vw, var(--board-height-limit), var(--board-width-limit), 600px);
+    --xiangqi-size: min(90vw, var(--board-width-limit), calc(var(--board-height-limit) * 0.9), 540px);
+    --xo-size: min(90vw, var(--board-height-limit), max(334px, var(--board-width-limit)), 600px);
     --square-size: calc(var(--board-size) / 8);
 }
 .app-container { padding: 16px 20px; }
@@ -3107,8 +3112,8 @@ body.effects-disabled .flying-bat {
 .chessboard { width: var(--board-size); height: var(--board-size); grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(8, minmax(0, 1fr)); flex-shrink: 0; }
 .chessboard .square { width: 100%; height: 100%; }
 .chessboard .piece { font-size: calc(var(--square-size) * 0.75); }
-.xiangqi-board { width: min(540px, 80vh, calc(100vw - 520px)); flex-shrink: 0; }
-.xo-board { width: min(600px, max(334px, min(90vw, 80vh, calc(100vw - 520px)))); flex-shrink: 0; }
+.xiangqi-board { width: var(--xiangqi-size); flex-shrink: 0; }
+.xo-board { width: var(--xo-size); flex-shrink: 0; }
 .controls { width: 100%; }
 button, select, input { font: inherit; min-height: 40px; }
 button, select { touch-action: manipulation; }
@@ -3120,10 +3125,10 @@ button:focus-visible, select:focus-visible, input:focus-visible, [tabindex]:focu
 [hidden] { display: none !important; }
 .game-controls label, #xiangqi-side-control label { font-size: 0.8rem; }
 .controls select { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid currentColor; border-radius: 6px; }
-.theme-harry-potter { --control-bg: #241b10; --control-fg: #ffe6ad; }
-.theme-greek { --control-bg: #fff8e8; --control-fg: #493410; }
-.theme-cyber { --control-bg: #081e26; --control-fg: #b0ffee; }
-.theme-vampire { --control-bg: #200c16; --control-fg: #ffd9e5; }
+.theme-harry-potter { --control-bg: #241b10; --control-fg: #ffe6ad; --caro-bg: #e8dcc4; --caro-line: #a08b65; --caro-border: #b8860b; --caro-x: #841b25; --caro-o: #243f73; --caro-last: #f4ca66; --caro-win: #a8d18d; }
+.theme-greek { --control-bg: #fff8e8; --control-fg: #493410; --caro-bg: #fff8e8; --caro-line: #b3975a; --caro-border: #9b761d; --caro-x: #8a3418; --caro-o: #22536c; --caro-last: #f1d685; --caro-win: #a6d1a0; }
+.theme-cyber { --control-bg: #081e26; --control-fg: #b0ffee; --caro-bg: #071c1b; --caro-line: #245c58; --caro-border: #00ff88; --caro-x: #ff8ded; --caro-o: #6ffff5; --caro-last: #24483e; --caro-win: #285f36; }
+.theme-vampire { --control-bg: #200c16; --control-fg: #ffd9e5; --caro-bg: #29111e; --caro-line: #71455a; --caro-border: #c94e72; --caro-x: #ff9fb1; --caro-o: #c3c8ff; --caro-last: #583022; --caro-win: #44365f; }
 .controls select, .controls select option { background-color: var(--control-bg); color: var(--control-fg); }
 .game-title, .game-controls label, #xiangqi-side-control label { color: var(--control-fg); }
 .modal { padding: 16px; }
@@ -3138,7 +3143,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, [tabindex]:focu
 .share-link-container input { min-width: 0; }
 .status-bar { overflow-wrap: anywhere; }
 @media (max-width: 850px) {
-    :root { --board-size: min(90vw, 80vh, calc(100vw - 64px), 600px); }
+    :root { --board-width-limit: calc(100vw - 64px); }
     .app-container { padding: 10px 6px; }
     .main-content { flex-direction: column; align-items: center; gap: 18px; }
     .board-container { order: 0; }
@@ -3149,8 +3154,8 @@ button:focus-visible, select:focus-visible, input:focus-visible, [tabindex]:focu
     .side-panel .controls > * { min-width: 0; }
     .controls .btn { height: 100%; min-height: 44px; padding: 10px 6px; font-size: 0.75rem; letter-spacing: 0; }
     .board-wrapper { padding: 1px !important; }
-    .xiangqi-board { width: min(540px, 88vw, 72vh); }
-    .xo-board { width: min(600px, max(334px, min(90vw, 80vh))); }
+    .xiangqi-board { width: var(--xiangqi-size); }
+    .xo-board { width: var(--xo-size); }
     .captured-section { flex: 1 1 140px; }
     .online-panel, .turn-indicator, .chat-panel { width: 100%; }
     .header .title { font-size: 0.9rem !important; }

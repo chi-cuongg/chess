@@ -132,19 +132,15 @@ class ThemeSwitcher {
         // Add new theme class
         document.body.classList.add(`theme-${theme}`);
 
-        // Update title based on theme
+        // The banner describes the theme and applies to all three board games.
         const title = document.querySelector('.title');
-        if (title) {
-            if (theme === 'harry-potter') {
-                title.innerHTML = '⚡ Chess Master ⚡';
-            } else if (theme === 'greek') {
-                title.innerHTML = '🏛️ Σκάκι Olympus 🏛️';
-            } else if (theme === 'cyber') {
-                title.innerHTML = '🤖 CYBER_CHESS.exe 🤖';
-            } else if (theme === 'vampire') {
-                title.innerHTML = '🧛 Dracula Chess 🦇';
-            }
-        }
+        const banners = {
+            'harry-potter': '⚡ Bàn cờ phép thuật ⚡',
+            greek: '🏛️ Đấu trường Olympus 🏛️',
+            cyber: '🤖 CYBER_BOARD.exe 🤖',
+            vampire: '🧛 Bàn cờ bóng đêm 🦇'
+        };
+        if (title) title.textContent = banners[theme] || 'Bàn cờ Việt';
 
         // Handle vampire theme bats
         if (theme === 'vampire' && this.effectsEnabled && !document.hidden) {

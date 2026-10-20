@@ -1,4 +1,4 @@
-# ♔ Chess Master
+# ♔ Bàn cờ Việt
 
 Ứng dụng chơi cờ (cờ vua, cờ tướng, cờ XO) chạy trên trình duyệt hoặc desktop
 (Electron). Hỗ trợ chơi 2 người, chơi với AI, chơi online P2P và nhiều giao diện
@@ -31,7 +31,9 @@ theo chủ đề.
   Timer/particle được dọn khi ẩn tab, đổi theme hoặc đổi game;
   tôn trọng `prefers-reduced-motion` của hệ điều hành.
 - **Responsive và bàn phím**: điều khiển chuyển xuống dưới bàn khi màn hình
-  hẹp, nút tối thiểu 40px. Dùng Tab/Shift+Tab để đi qua các điều khiển;
+  hẹp, bàn tự co theo chiều cao màn hình sau khi trừ header và khung/nhãn;
+  cờ tướng giữ tỉ lệ 9×10. Caro dùng màu của theme; font có tiếng Việt.
+  Nút tối thiểu 40px. Dùng Tab/Shift+Tab để đi qua các điều khiển;
   Esc hoặc click nền đóng modal. Đóng chọn phong cấp hủy lựa chọn để đi lại nước đó.
 
 ## Yêu cầu
@@ -105,7 +107,7 @@ test/
 
 ## Phạm vi kiểm thử tích hợp
 
-`npm test` chạy 56 test (12 cờ vua, 16 cờ tướng, 15 Caro và 13 controller/lifecycle),
+`npm test` chạy 59 test (12 cờ vua, 16 cờ tướng, 15 Caro và 16 controller/lifecycle),
 không cần cài thư viện test mới. Bộ hồi quy có trường hợp undo khi AI đang chờ,
 bỏ kết quả Worker trả muộn, giữ node render T7, dừng replay, xuất SAN PGN,
 dọn timer theme T8, toggle hiệu ứng và khóa đổi game trong phòng online.
@@ -113,6 +115,10 @@ dọn timer theme T8, toggle hiệu ứng và khóa đổi game trong phòng onl
 Đã kiểm tra trên browser Orca: 36 tổ hợp của 360/768/1440px × ba game × bốn theme
 về kích thước bàn, tràn ngang, kích thước nút và vị trí toggle hiệu ứng;
 28 kiểm tra hành vi gồm năm vòng đổi game, Worker/fallback, undo và modal.
+Sau review T11, đã chụp lại 12 ảnh Orca ở 1255×706 (bốn theme × ba game):
+hàng cuối và nhãn a–h nằm trọn trong viewport, Chat ẩn ở cờ tướng/Caro,
+banner dùng tên chung và màu Caro thay đổi theo theme. Kiểm tra resize thêm
+360×800, 768×1024, 1255×550 và 1440×900 không phát hiện tràn bàn.
 Cần review riêng Electron `app://`, một ván PeerJS giữa hai máy và đo CPU idle
 bằng DevTools Performance; các kiểm tra browser/Node trên không thay thế ba mục này.
 

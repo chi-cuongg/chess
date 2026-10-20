@@ -225,4 +225,39 @@ test('online room locks selector/AI controls and rejects programmatic game switc
     assert(e.get('game-type-selector').disabled); assert(e.get('play-ai-btn').disabled); assert(e.get('ai-difficulty').disabled);
     assert.equal(manager.gameType, 'chess'); assert.equal(e.get('game-type-selector').value, 'chess');
 });
+test('Chat/online are hidden for Xiangqi and Caro and restored for chess', () => {
+    const e = environment(), manager = Object.create(e.GameManager.prototype);
+    manager.currentGame = { playingAgainstAI: false };
+    for (const type of ['chess', 'xiangqi', 'xo', 'chess']) {
+        manager.gameType = type; manager.updateUI();
+        const display = type === 'chess' ? '' : 'none';
+        assert.equal(e.get('#chat-panel').style.display, display);
+        assert.equal(e.get('#online-panel').style.display, display);
+    }
+});
+test('theme banners apply to every game instead of advertising chess only', () => {
+    const e = environment(), theme = new e.ThemeSwitcher();
+    for (const name of ['harry-potter', 'greek', 'cyber', 'vampire']) {
+        theme.changeTheme(name);
+        const banner = e.get('.title').textContent;
+        assert(banner.length > 0); assert(!/chess|Σκάκι/i.test(banner));
+    }
+});
+test('header sizing follows font/viewport-driven header height changes', () => {
+    const e = environment(), manager = Object.create(e.GameManager.prototype);
+    const properties = new Map();
+    e.document.documentElement = { style: { setProperty: (key, value) => properties.set(key, value) } };
+    let height = 180, observed = null, onResize;
+    const header = e.get('.header');
+    header.getBoundingClientRect = () => ({ height });
+    e.context.ResizeObserver = class {
+        constructor(callback) { onResize = callback; }
+        observe(element) { observed = element; }
+    };
+    manager.setupBoardSizing();
+    assert.strictEqual(observed, header);
+    assert.equal(properties.get('--header-height'), '180px');
+    height = 220; onResize();
+    assert.equal(properties.get('--header-height'), '220px');
+});
 console.log(passed + ' controller/lifecycle tests passed');

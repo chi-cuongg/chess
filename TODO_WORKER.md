@@ -154,6 +154,13 @@ Lệnh kiểm tra cơ bản: `npm test` (12 test engine cờ vua) và `npm run l
   liệt kê trong "Nhật ký worker" những gì chưa làm được hoặc cần người review.
 - **Kiểm tra**: `npm test && npm run lint` (phải PASS toàn bộ); `git log --oneline` có đủ commit T1..T10.
 
+
+## T11 — Sửa lỗi review trực quan sau tích hợp
+
+- **Mục tiêu**: Cả ba bàn cờ vừa chiều cao viewport 1255×706, kể cả nhãn a–h của cờ vua; font tiếng Việt hiển thị đúng, Chat chỉ hiện cho cờ vua, banner dùng tên chung, Caro theo màu theme.
+- **Yêu cầu**: Tính kích thước theo `min(90vw, 100dvh - chiều cao header - lề/nhãn)`; cờ tướng giữ tỉ lệ 9×10, Caro 15×15. Thay font thiếu glyph tiếng Việt trong Harry Potter/Greek/Vampire; giữ Cyber đọc đúng. Không thêm dependency/CDN mới.
+- **Kiểm tra**: Orca screenshot đủ 4 theme × 3 game tại 1255×706; kiểm tra thêm mobile và resize. `npm test` và `npm run lint` phải PASS trước commit `T11: ...`; ghi kết quả/blocker vào nhật ký. Không push.
+
 ---
 
 ## Nhật ký worker
@@ -170,3 +177,4 @@ Lệnh kiểm tra cơ bản: `npm test` (12 test engine cờ vua) và `npm run l
 - T8 — DONE — Hiệu năng hiệu ứng theme: dừng timer/bats khi tab ẩn và đổi theme, giới hạn particle pool max 20, nút toggle hiệu ứng (lưu localStorage), tối ưu animation dùng opacity/transform, pause animation khi tắt hiệu ứng và tôn trọng prefers-reduced-motion. Test/lint PASS.
 - T9 — DONE (code) — Tiêu đề/nhãn theo game; layout mobile, ô Caro ≥22px, nút ≥40px, focus/disabled, aria, modal Esc/click nền/focus trap; sửa undo sau khi AI thắng Caro. 43 test và lint 22 file PASS; QA HTML/CSS và modal/undo bằng Node PASS. Chưa kiểm tra trực quan 360/768/1440px × 4 theme vì không có browser (Browser is not available: iab). CSS T9 chỉ thêm khối layout; không đổi theme.js, animation/effect hoặc nút hiệu ứng.
 - T10 — DONE — Sau merge 9d8c259: sửa undo cờ vua (1 nước khi AI đang chờ, 2 sau trả lời; hủy Worker cũ và lên lịch lại nếu lượt khôi phục thuộc AI). Thêm 13 test hồi quy controller/lifecycle; tổng 56 test PASS, lint tự quét đủ 23 file PASS. Manager dọn timer/particle theme cũ khi đổi game, chỉ khởi động lại hiệu ứng nền theo tùy chọn; replay/AI/listener được destroy. Toggle hiệu ứng có aria-pressed, không trùng layout T9; README cập nhật AI ba game, luật, hiệu ứng, phím Tab/Esc, giới hạn kiểm thử. Orca browser PASS 36 tổ hợp layout (360/768/1440px × 3 game × 4 theme) và 28 kiểm tra hành vi (đổi game 5 vòng, Worker/fallback, undo, replay, theme/modal). Không thêm dependency/CDN, không push/PR. Cần người review: Electron app://, PeerJS thật giữa hai máy, đo CPU idle bằng DevTools Performance và kiểm tra trực quan toàn bộ theme (đo layout bằng DOM không thay thế review hình ảnh).
+- T11 — DONE — Đã thêm mục giao việc trước khi sửa. Kích thước ba bàn theo 100dvh trừ header đo bằng ResizeObserver và 120px khung/lề/nhãn; cờ tướng giữ 9×10, nhãn a–h vừa màn hình. Thay Cinzel/IM Fell/Philosopher bằng Playfair Display + Times New Roman (font Google đã có, subset vietnamese), giữ Cyber; ẩn Chat ngoài cờ vua; banner chung cho ba game; Caro dùng biến màu từng theme cho nền/lưới/X/O/nước cuối/ô thắng. Orca screenshot đủ 12 ảnh 1255×706, đã xem ảnh: mép dưới cụm bàn/nhãn tối đa 686px, font tiếng Việt đúng; thêm 12 kiểm tra resize tại 360×800, 768×1024, 1255×550, 1440×900 đều PASS. Ảnh và metrics tại C:/Users/Admin/AppData/Local/Temp/chess-t11-qa/. 59 test PASS, lint 23/23 PASS; không thêm dependency/CDN, không push.

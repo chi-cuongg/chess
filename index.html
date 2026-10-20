@@ -87,13 +87,32 @@
 
             <!-- Chess Board -->
             <div class="board-container">
+                <div class="board-view-toolbar" role="group" aria-label="Hiển thị bàn cờ">
+                    <div class="board-view-modes" role="group" aria-label="Chế độ hiển thị">
+                        <button id="board-view-2d" type="button" aria-pressed="true">2D</button>
+                        <button id="board-view-3d" type="button" aria-pressed="false">3D</button>
+                    </div>
+                    <label class="board-quality-control" for="board-quality">Chất lượng
+                        <select id="board-quality" disabled>
+                            <option value="low">Thấp</option>
+                            <option value="medium" selected>Vừa</option>
+                            <option value="high">Cao</option>
+                        </select>
+                    </label>
+                </div>
+                <p id="board-view-message" class="board-view-message" role="status" hidden></p>
                 <div class="board-wrapper">
                     <div class="board-labels row-labels">
                         <span>8</span><span>7</span><span>6</span><span>5</span>
                         <span>4</span><span>3</span><span>2</span><span>1</span>
                     </div>
                     <div id="chessboard" class="chessboard"></div>
+                    <div id="board3d" hidden>
+                        <p id="board3d-help" class="board3d-help">Bản xem 3D · Kéo để xoay, cuộn để thu phóng. Cảm ứng: chạm để chọn, kéo hai ngón để xoay.</p>
+                        <div id="board3d-loading" class="board3d-loading" role="status" hidden>Đang tải bàn 3D…</div>
+                    </div>
                 </div>
+                <p id="board3d-announcement" class="board-sr-only" aria-live="polite" aria-atomic="true"></p>
                 <div class="board-labels col-labels">
                     <span>a</span><span>b</span><span>c</span><span>d</span>
                     <span>e</span><span>f</span><span>g</span><span>h</span>

@@ -16,7 +16,7 @@ function loadRuntime() {
 // Export names follow the common board-view contract; missing views use the demo.
 const viewModules = import.meta.glob('./3d/views/*View.js');
 export const viewRegistry = {
-    chess: { module: './3d/views/chessView.js', exportName: 'ChessView' },
+    chess: { load: () => import('./3d/views/chessView.js'), exportName: 'ChessView' },
     xiangqi: { module: './3d/views/xiangqiView.js', exportName: 'XiangqiView' },
     xo: { module: './3d/views/xoView.js', exportName: 'XOView' }
 };
@@ -169,7 +169,7 @@ function start() {
             const id = ++viewId;
             setLoading(true);
             const registration = viewRegistry[next.game];
-            const loader = registration && viewModules[registration.module];
+            const loader = registration && (registration.load || viewModules[registration.module]);
             const module = loader ? await loader() : null;
             if (id !== viewId || engine !== currentEngine || desiredMode !== '3d') return;
             const View = module ? module[registration.exportName] : DemoView;

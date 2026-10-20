@@ -161,3 +161,4 @@ Lệnh kiểm tra cơ bản: `npm test` (12 test engine cờ vua) và `npm run l
 <!-- Worker ghi lại tiến độ / blocker tại đây, mỗi task 1 dòng: T<id> — DONE/BLOCKED — ghi chú -->
 
 - T1 — DONE — Manager điều phối nút chung; hủy AI/replay, khóa phòng online, lưu loại cờ. Test/lint PASS; kiểm tra UI tổng hợp ở T10.
+- T2 — DONE — Module luật thuần, không mutate board; 13 test cờ tướng PASS cùng 12 test cờ vua; lint tự quét file mới PASS.

@@ -186,6 +186,8 @@ Lệnh kiểm tra cơ bản: `npm test` (12 test engine cờ vua) và `npm run l
 
 - T13 — DONE — getState/selectSquare và game:state cho cả ba controller; snapshot sao chép sâu, tọa độ thống nhất, moveId tăng khi đi/undo/new/replay, capture đúng cả en passant/phong cấp, AI/check/win/flip; thêm 7 test snapshot bằng window/CustomEvent stub (66 test tổng), lint/build PASS; preview xác nhận sự kiện ba game và đã xem C:/Users/Admin/AppData/Local/Temp/chess-wave1-qa/t13.png.
 
+- T14 — DONE — Engine3D + TweenGroup, OrbitControls giới hạn góc, RoomEnvironment/PMREM, shadow 1024 chỉ high, DPR ≤2, ResizeObserver, pause tab ẩn, motion/effects, pick/state bridge và demo mặt phẳng/khối; 66 test, lint 26 file, build PASS. Orca idle frame 46→46/1,4s, 48→48/1s và 58→58/1,2s (RAF=null); đổi game 10 lần geometry 0–2/texture 1, dispose về 0/0, picking Caro và fallback ?view=2d PASS. QA xác định cho tween, hidden pause/resume, reduced motion, resize, shared resource dispose PASS; đã xem t14-demo.png và t14-final.png, metrics/scripts ở C:/Users/Admin/AppData/Local/Temp/chess-wave1-qa/. Engine dùng preset demo nội bộ (Engine3D.themes) để độc lập T15; Wave 2 ghép preset asset và view thực, bundle hiện ~502KB (~127KB gzip).
+
 # GIAI ĐOẠN 2 — Web-only + 3D Graphics & Animation
 
 > Quyết định của Orchestrator (Tech Lead). Worker KHÔNG tự đổi các quyết định này; nếu thấy không khả thi,

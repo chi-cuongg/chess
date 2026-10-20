@@ -188,6 +188,8 @@ function start() {
         container.dataset.game = next.game;
         container.setAttribute('aria-label', `Bàn 3D, lượt ${next.turn}`);
         document.body.classList.add('board3d-active');
+        // The active class changes layout; fit the first frame to that final size.
+        engine.resize();
         setLoading(false);
         engine.requestRender();
     };

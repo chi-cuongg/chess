@@ -133,7 +133,7 @@ export const THEMES = {
             validCapture: 0xff0055,
             lastMove: 0x00ffaa,
             check: 0xff0033,
-            winLine: 0x285f36
+            winLine: 0x72ffab
         }
     },
     'vampire': {
@@ -155,7 +155,7 @@ export const THEMES = {
         },
         xiangqi: {
             red: { discColor: 0x30080e, charColor: '#ff2244', ringColor: '#cc1133', roughness: 0.3, metalness: 0.2 },
-            black: { discColor: 0x18050a, charColor: '#ffe4ec', ringColor: '#994455', roughness: 0.3, metalness: 0.2 }
+            black: { discColor: 0x18050a, charColor: '#fff4f7', ringColor: '#e5a6bc', fontScale: 0.64, roughness: 0.3, metalness: 0.2 }
         },
         xo: {
             x: { color: 0xff8fa3, roughness: 0.28, metalness: 0.25 },
@@ -177,7 +177,7 @@ export const THEMES = {
             validCapture: 0xff0000,
             lastMove: 0x583022,
             check: 0xff0000,
-            winLine: 0x44365f
+            winLine: 0xd8b4ff
         }
     }
 };

@@ -3189,7 +3189,15 @@ button:focus-visible, select:focus-visible, input:focus-visible, [tabindex]:focu
 .board-view-message { max-width: 550px; margin: 0; font-size: 13px; line-height: 1.5; color: var(--control-fg); }
 #board3d { position: absolute; inset: 0; z-index: 2; overflow: hidden; border-radius: 7px; }
 .board3d-active #chessboard, .board3d-active .board-labels { opacity: 0; pointer-events: none; }
-.board3d-active .board-wrapper { transform: none !important; }
+/* Reserve two 185px panels and two 24px gaps on desktop. */
+.board3d-active .board-container { flex: 0 1 auto; width: min(900px, calc(100% - 418px)); }
+.board3d-active .board-wrapper {
+    transform: none !important; width: 100%;
+    height: max(180px, calc(100dvh - var(--header-height, 160px) - 120px));
+    padding: 0 !important;
+}
+/* The accessible DOM board must not determine the canvas dimensions. */
+.board3d-active #chessboard, .board3d-active .board-labels { position: absolute; }
 .board3d-help {
     position: absolute; z-index: 1; left: 10px; right: 10px; bottom: 10px; margin: 0;
     padding: 8px 12px; border: 1px solid #ffffff25; border-radius: 8px;
@@ -3213,7 +3221,8 @@ button:focus-visible, select:focus-visible, input:focus-visible, [tabindex]:focu
     .board-view-toolbar { gap: 8px; padding: 6px; }
     .board-quality-control { gap: 6px; font-size: 12px; }
     .board3d-active .board-container { width: 100%; }
-    .board3d-active .board-wrapper { width: 100%; min-height: min(90vw, var(--board-height-limit)); }
+    .board3d-active .board-container { flex: none; }
+    .board3d-active .board-wrapper { height: min(110vw, max(180px, calc(100dvh - var(--header-height, 160px) - 120px))); }
     .board3d-active .side-panel { padding: 10px; }
     .board3d-help { left: 6px; right: 6px; bottom: 6px; padding: 6px; font-size: 11px; }
 }

@@ -16,6 +16,7 @@ export class XOView {
         this.pieceHeights = new Map();
         this.drops = new Map();
         this.pieceScales = new Map();
+        this.winningSquares = new Set();
         this.xInstances = [];
         this.oInstances = [];
         this.disposed = false;
@@ -72,6 +73,18 @@ export class XOView {
 
         const winGeometry = geometry(new THREE.RingGeometry(this.cellSize * 0.16, this.cellSize * 0.42, 32));
         this.winMarkers = Array.from({ length: 5 }, () => marker(winGeometry, this.markerMaterials.finish));
+        // A persistent bright copy makes the actual five pieces distinct in a still image.
+        this.winMaterial = new THREE.MeshBasicMaterial({ color: this.theme.highlights.winLine });
+        this.ownedMaterials.add(this.winMaterial);
+        this.winPieces = Array.from({ length: 5 }, () => {
+            const mesh = new THREE.Mesh(getOrCreateXGeometry(), this.winMaterial);
+            mesh.visible = false;
+            this.root.add(mesh);
+            return mesh;
+        });
+        this.winConnector = new THREE.Mesh(geometry(new THREE.BoxGeometry(1, 0.025, this.cellSize * 0.09)), this.winMaterial);
+        this.winConnector.visible = false;
+        this.root.add(this.winConnector);
 
         this.finishMarker = marker(geometry(new THREE.RingGeometry(this.cellSize * 0.45, this.cellSize * 0.65, 48)), this.finishMaterial);
 
@@ -148,8 +161,9 @@ export class XOView {
     getPieceMatrix(r, c) {
         const key = `${r},${c}`;
         const pos = this.boardAsset.squareToWorld(r, c);
-        const h = this.pieceHeights.get(key) || 0;
-        const s = this.pieceScales.get(key) || 1;
+        const winner = this.winningSquares.has(key);
+        const h = (this.pieceHeights.get(key) || 0) + (winner ? 0.09 : 0);
+        const s = (this.pieceScales.get(key) || 1) * (winner ? 1.16 : 1);
 
         const matrix = new THREE.Matrix4();
         const position = new THREE.Vector3(pos.x, pos.y + h, pos.z);
@@ -188,6 +202,16 @@ export class XOView {
         this.meshes.o.instanceMatrix.needsUpdate = true;
         this.meshes.x.computeBoundingSphere();
         this.meshes.o.computeBoundingSphere();
+        this.winPieces.forEach((mesh, i) => {
+            const point = this.winningLine?.[i];
+            const piece = point && this.board[point.row]?.[point.col];
+            mesh.visible = !!piece;
+            if (!piece) return;
+            mesh.geometry = piece === 'X' ? getOrCreateXGeometry() : getOrCreateOGeometry();
+            this.getPieceMatrix(point.row, point.col).decompose(mesh.position, mesh.quaternion, mesh.scale);
+            mesh.position.y += 0.015;
+            mesh.scale.multiplyScalar(1.02);
+        });
         this.engine.requestRender();
     }
 
@@ -230,6 +254,17 @@ export class XOView {
 
     updateMarkers(state) {
         this.setMarker(this.lastMarker, state.lastMove?.to, 0.02);
+        this.winningLine = state.winLine?.length >= 5 ? state.winLine.slice(0, 5) : [];
+        this.winningSquares = new Set(this.winningLine.map(p => `${p.row},${p.col}`));
+        this.winConnector.visible = this.winningLine.length === 5;
+        if (this.winConnector.visible) {
+            const start = this.boardAsset.squareToWorld(this.winningLine[0].row, this.winningLine[0].col);
+            const end = this.boardAsset.squareToWorld(this.winningLine[4].row, this.winningLine[4].col);
+            this.winConnector.position.copy(start).add(end).multiplyScalar(0.5);
+            this.winConnector.position.y += 0.04;
+            this.winConnector.scale.x = start.distanceTo(end);
+            this.winConnector.rotation.y = -Math.atan2(end.z - start.z, end.x - start.x);
+        }
 
         if (state.winLine && state.winLine.length >= 5) {
             for (let i = 0; i < 5; i++) {
@@ -257,6 +292,7 @@ export class XOView {
             this.winMarkers.forEach(m => { m.visible = false; });
             this.pieceScales.clear();
         }
+        this.syncInstances();
 
         if (state.gameOver && !this.state?.gameOver) {
             this.setMarker(this.finishMarker, state.lastMove?.to || { row: 7, col: 7 }, 0.05);
@@ -330,6 +366,7 @@ export class XOView {
 
         this.markerMaterials.last.color.set(theme.highlights.lastMove);
         this.markerMaterials.finish.color.set(theme.highlights.winLine);
+        this.winMaterial.color.set(theme.highlights.winLine);
         this.finishMaterial.color.set(theme.highlights.winLine);
         this.ghostMaterialX.color.set(theme.xo.x.color);
         this.ghostMaterialO.color.set(theme.xo.o.color);

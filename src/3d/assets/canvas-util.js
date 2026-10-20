@@ -129,6 +129,7 @@ export function createXiangqiSymbolTexture({
     charColor = '#d32f2f',
     ringColor = '#c62828',
     discBgColor = '#f5e6c8',
+    fontScale = 0.52,
     width = 256,
     height = 256
 } = {}) {
@@ -173,7 +174,7 @@ export function createXiangqiSymbolTexture({
     ctx.fillStyle = charColor;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = `bold ${Math.round(width * 0.52)}px "Kaiti", "STKaiti", "Noto Serif SC", "SimSun", "Times New Roman", serif`;
+    ctx.font = `bold ${Math.round(width * fontScale)}px "Kaiti", "STKaiti", "Noto Serif SC", "SimSun", "Times New Roman", serif`;
     ctx.fillText(symbol, 0, width * 0.02);
     ctx.restore();
 

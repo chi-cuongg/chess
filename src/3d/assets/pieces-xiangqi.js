@@ -81,6 +81,7 @@ function getOrCreateSymbolTexture(code, info, theme) {
         charColor: cfg.charColor,
         ringColor: cfg.ringColor,
         discBgColor: discBg,
+        fontScale: cfg.fontScale || 0.60,
         width: 256,
         height: 256
     });
@@ -105,6 +106,9 @@ function getOrCreateMaterials(code, info, theme) {
             material.metalness = cfg.metalness;
         }
         mats[1].map = symbolTexture;
+        mats[1].emissiveMap = symbolTexture;
+        mats[1].emissive.setHex(0xffffff);
+        mats[1].emissiveIntensity = 0.3;
         mats[1].roughness = cfg.roughness * 0.9;
         mats[1].metalness = cfg.metalness * 0.5;
         mats[1].needsUpdate = true;
@@ -120,6 +124,9 @@ function getOrCreateMaterials(code, info, theme) {
 
     const topMat = new THREE.MeshStandardMaterial({
         map: symbolTexture,
+        emissiveMap: symbolTexture,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.3,
         roughness: cfg.roughness * 0.9,
         metalness: cfg.metalness * 0.5
     });

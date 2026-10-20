@@ -167,6 +167,8 @@ Lệnh kiểm tra cơ bản: `npm test` (12 test engine cờ vua) và `npm run l
 
 <!-- Worker ghi lại tiến độ / blocker tại đây, mỗi task 1 dòng: T<id> — DONE/BLOCKED — ghi chú -->
 
+- T21 — DONE — Năm quân Caro thắng giữ màu highlight sáng, nâng/phóng nhẹ và vạch nối sau pulse hoặc khi tắt hiệu ứng/reduced motion; chữ Hán lớn hơn, mặt quân dùng emissive texture nhẹ, riêng Đen Ma Cà Rồng tăng chữ/viền tương phản. Canvas độc lập bàn DOM ẩn, tận dụng vùng giữa hai panel, fit camera theo mọi góc bounds và tỉ lệ khung, resize giữ hướng lật/zoom; đồng bộ buffer ngay khi bật 3D/đổi theme. 130 test, lint 40/40 và build PASS; đã xuất và XEM 24 PNG production (3 game ×4 theme ×1255×706/360×800), canvas 774×462 và 324,8×388, không tràn; xem thêm ảnh tướng lật và xác nhận reduced-motion=true vẫn 5 quân thắng, không tween. Báo cáo T21_QA.md; PNG/JSON/script/log tại C:/Users/Admin/AppData/Local/Temp/chess-t21-qa/. Orca compositor vẫn lặp dải screenshot; sau đổi viewport giả lập cần reload để CSS media ổn định, kiểm tra resize bằng unit test và DOM/buffer; không push/merge.
+
 - T1 — DONE — Manager điều phối nút chung; hủy AI/replay, khóa phòng online, lưu loại cờ. Test/lint PASS; kiểm tra UI tổng hợp ở T10.
 - T2 — DONE — Module luật thuần, không mutate board; 13 test cờ tướng PASS cùng 12 test cờ vua; lint tự quét file mới PASS.
 - T3 — DONE — UI dùng rules, delegation, gợi ý/chiếu/nước cuối/quân bị ăn, undo theo lượt AI và chọn Đen/lật bàn. Test/lint PASS; UI sẽ kiểm tra tổng hợp T10.

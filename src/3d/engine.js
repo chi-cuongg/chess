@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { TweenGroup } from './tween.js';
+import { fitBoardCamera } from './camera-fit.js';
 
 // Engine defaults keep the Wave 1 demo independent of the parallel assets task.
 // Integrating views may register richer asset presets with Engine3D.themes.
@@ -103,6 +104,7 @@ export class Engine3D {
         });
         this.resizeObserver = new ResizeObserver(() => this.resize());
         this.resizeObserver.observe(container);
+        window.addEventListener('resize', this.onResize = () => this.resize());
         this.setQuality(quality);
         this.setTheme('harry-potter');
         this.resize();
@@ -120,10 +122,32 @@ export class Engine3D {
         const { width, height } = this.container.getBoundingClientRect();
         if (width <= 0 || height <= 0) { this.hasSize = false; this.stopFrame(); return; }
         this.hasSize = true;
+        const changed = this.width !== width || this.height !== height;
+        this.width = width;
+        this.height = height;
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(width, height, false);
+        if (changed && this.view?.cameraBounds) {
+            const flying = this.cameraFlight && !this.cameraFlight.cancelled && !this.cameraFlight.finished;
+            const current = flying ? { ...this.view.cameraPreset, position: this.view.cameraPreset.position.map((value, i) =>
+                this.view.state?.flipped && i !== 1 ? -value : value) }
+                : { position: this.camera.position.toArray(), target: this.controls.target.toArray() };
+            if (this.cameraFlight) this.cameraFlight.cancelled = true;
+            this.fitViewCamera();
+            const fitted = fitBoardCamera(this.camera, this.view.cameraBounds, current);
+            this.camera.position.fromArray(fitted.position);
+            this.controls.target.fromArray(fitted.target);
+            this.controls.update();
+        }
         this.requestRender();
+    }
+
+    fitViewCamera() {
+        const view = this.view;
+        view.baseCameraPreset ||= view.cameraPreset;
+        view.cameraPreset = fitBoardCamera(this.camera, view.cameraBounds, view.baseCameraPreset);
+        this.controls.maxDistance = Math.max(28, new THREE.Vector3(...view.cameraPreset.position).length() * 2);
     }
 
     setQuality(level) {
@@ -155,6 +179,7 @@ export class Engine3D {
         this.light.color.set(this.preset.light);
         this.light.intensity = this.preset.intensity;
         this.view?.setTheme(this.preset);
+        this.resize();
         this.requestRender();
     }
 
@@ -170,6 +195,12 @@ export class Engine3D {
         view.init(this);
         if (view.root && view.root.parent !== this.scene) this.scene.add(view.root);
         view.setTheme(this.preset);
+        if (view.cameraPreset) {
+            view.cameraBounds = new THREE.Box3().setFromObject(view.boardAsset?.group || view.root);
+            // Include tall pieces and selected-piece lift before the first state arrives.
+            view.cameraBounds.max.y = Math.max(view.cameraBounds.max.y, view.root.name === 'chess-view' ? 2 : 0.5);
+            this.fitViewCamera();
+        }
         const preset = view.cameraPreset;
         if (preset) {
             const fromPosition = this.camera.position.clone(), fromTarget = this.controls.target.clone();
@@ -180,6 +211,7 @@ export class Engine3D {
                 this.camera.position.lerpVectors(fromPosition, position, t);
                 this.controls.target.lerpVectors(fromTarget, target, t);
                 this.controls.update();
+                if (t === 1) flight.finished = true;
             });
         }
         this.requestRender();
@@ -236,6 +268,7 @@ export class Engine3D {
         this.stopFrame();
         this.tweens.cancel();
         this.resizeObserver.disconnect();
+        window.removeEventListener('resize', this.onResize);
         this.effectObserver.disconnect();
         this.motionQuery.removeEventListener('change', this.onMotionChange);
         document.removeEventListener('visibilitychange', this.onVisibility);

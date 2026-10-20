@@ -301,6 +301,35 @@ test('disabled motion places pieces at y=0 immediately with no pending animation
     f.view.dispose();
 });
 
+test('winning X and O pieces stay bright, raised and connected without motion and after pulse', () => {
+    for (const piece of ['X', 'O']) for (const motion of [false, true]) {
+        const board = emptyBoard();
+        const winLine = Array.from({ length: 5 }, (_, i) => ({ row: i + 3, col: i + 4 }));
+        winLine.forEach(p => { board[p.row][p.col] = piece; });
+        board[10][10] = piece;
+        const f = fixture(board, motion);
+        f.update({ ...f.state, winLine, gameOver: true });
+        f.tick(1);
+        assert.equal(f.pending.length, 0);
+        assert.equal(f.view.winConnector.visible, true);
+        assert.equal(f.view.winMaterial.color.getHex(), themes['harry-potter'].highlights.winLine);
+        assert.equal(f.view.winMaterial.opacity, 1);
+        assert.equal(f.view.winMaterial.isMeshBasicMaterial, true);
+        for (const mesh of f.view.winPieces) {
+            assert(mesh.visible);
+            assert(mesh.position.y > 0.09);
+            assert(mesh.scale.x > 1.15);
+        }
+        f.view.setTheme(themes.cyber);
+        assert.equal(f.view.winMaterial.color.getHex(), themes.cyber.highlights.winLine);
+        f.update({ ...f.state, winLine: null, gameOver: false, moveId: 3 });
+        assert.equal(f.view.winConnector.visible, false);
+        assert(f.view.winPieces.every(mesh => !mesh.visible));
+        assert.equal(f.view.winningSquares.size, 0);
+        f.view.dispose();
+    }
+});
+
 test('hover preview shows ghost mesh of current player on empty square and hides on occupied', () => {
     const f = fixture();
     f.move(7, 7, 'X');

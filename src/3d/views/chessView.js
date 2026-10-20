@@ -339,6 +339,7 @@ export class ChessView {
                 from.y + (this.cameraPreset.position[1] - from.y) * t, target.z + Math.cos(angle + delta * t) * currentRadius);
             engine.controls.target.lerpVectors(fromTarget, target, t);
             engine.controls.update();
+            if (t === 1) flight.finished = true;
         });
     }
 

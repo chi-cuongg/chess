@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert';
 import * as THREE from 'three';
+import { fitBoardCamera } from '../src/3d/camera-fit.js';
+import { Engine3D } from '../src/3d/engine.js';
 
 import { THEMES, getTheme, DEFAULT_THEME } from '../src/3d/assets/themes.js';
 import {
@@ -320,4 +322,96 @@ test('board and symbol color textures are decoded as sRGB', () => {
     assert.strictEqual(piece.material[1].map.colorSpace, THREE.SRGBColorSpace);
     disposeXiangqiPieces();
     disposeBoards();
+});
+
+test('camera fits every board corner at desktop and mobile ratios, including flipped boards', () => {
+    for (const factory of [createChessBoard, createXiangqiBoard, createXOBoard]) {
+        const board = factory();
+        const bounds = new THREE.Box3().setFromObject(board.group);
+        bounds.max.y = factory === createChessBoard ? 2 : 0.5;
+        for (const aspect of [797 / 488, 348 / 396, 1, 0.6]) for (const sign of [1, -1]) {
+            const camera = new THREE.PerspectiveCamera(42, aspect, 0.1, 100);
+            const fitted = fitBoardCamera(camera, bounds, { position: [0, 12.5, 13 * sign], target: [0, 0, 0] });
+            camera.position.fromArray(fitted.position);
+            camera.lookAt(...fitted.target);
+            camera.updateMatrixWorld();
+            let extent = 0;
+            for (const x of [bounds.min.x, bounds.max.x]) for (const y of [bounds.min.y, bounds.max.y]) {
+                for (const z of [bounds.min.z, bounds.max.z]) {
+                    const point = new THREE.Vector3(x, y, z).project(camera);
+                    assert(Math.abs(point.x) <= 1 / 1.08 + 1e-6);
+                    assert(Math.abs(point.y) <= 1 / 1.08 + 1e-6);
+                    extent = Math.max(extent, Math.abs(point.x), Math.abs(point.y));
+                }
+            }
+            assert(extent > 0.92, 'one dimension should fill the available frame');
+        }
+    }
+    disposeBoards();
+});
+
+test('Xiangqi symbols stay large and high contrast through all four theme switches', () => {
+    const draws = [];
+    setCanvasFactory((width, height) => {
+        const canvas = createStubCanvas(width, height);
+        const ctx = canvas.getContext('2d');
+        ctx.fillText = function () { draws.push({ font: this.font, color: this.fillStyle }); };
+        return canvas;
+    });
+    try {
+        for (const theme of Object.values(THEMES)) {
+            for (const code of ['B_K', 'R_K']) {
+                const piece = createXiangqiPiece(code, theme);
+                const face = piece.material[1];
+                const draw = draws.at(-1);
+                assert(parseInt(draw.font.match(/(\d+)px/)[1]) >= 154);
+                assert.equal(draw.color, theme.xiangqi[code[0] === 'B' ? 'black' : 'red'].charColor);
+                assert.equal(face.emissiveMap, face.map);
+                assert.equal(face.emissiveIntensity, 0.3);
+                assert.equal(face.map.userData.themeId, theme.id);
+            }
+        }
+        assert.equal(THEMES.vampire.xiangqi.black.fontScale, 0.64);
+    } finally {
+        setCanvasFactory(null);
+        disposeXiangqiPieces();
+    }
+});
+
+test('engine resize fits mobile, preserves a completed flip, and settles an interrupted flight', () => {
+    const engine = Object.create(Engine3D.prototype);
+    let rect = { width: 774, height: 461 };
+    engine.container = { getBoundingClientRect: () => rect };
+    engine.camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+    engine.camera.position.set(0, 12, -13);
+    engine.controls = { target: new THREE.Vector3(), update() { engine.camera.lookAt(this.target); } };
+    const sizes = [];
+    engine.renderer = { setSize: (w, h) => sizes.push([w, h]) };
+    engine.requestRender = () => {};
+    engine.view = { cameraPreset: { position: [0, 12, 13], target: [0, 0, 0] },
+        cameraBounds: new THREE.Box3(new THREE.Vector3(-5, -0.35, -5), new THREE.Vector3(5, 2, 5)) };
+    engine.cameraFlight = { finished: true };
+    engine.resize();
+    assert(engine.camera.position.z < 0, 'resizing a flipped view keeps its direction');
+    const desktop = engine.view.cameraPreset.position[2];
+    rect = { width: 325, height: 388 };
+    engine.resize();
+    assert(engine.view.cameraPreset.position[2] > desktop);
+    assert(engine.camera.position.z < 0);
+    engine.camera.position.multiplyScalar(1.2);
+    const zoomed = engine.camera.position.clone();
+    engine.resize();
+    assert(engine.camera.position.equals(zoomed), 'quality-only resize keeps user zoom');
+    engine.cameraFlight = { cancelled: false };
+    engine.camera.position.set(9, 11, 12);
+    rect = { width: 400, height: 500 };
+    engine.resize();
+    assert.equal(engine.camera.position.x, 0, 'a layout resize during the initial flight reaches the preset direction');
+    assert.equal(engine.cameraFlight.cancelled, true);
+    assert.equal(sizes.length, 4);
+    engine.view.state = { flipped: true };
+    engine.cameraFlight = { cancelled: false };
+    rect = { width: 500, height: 400 };
+    engine.resize();
+    assert(engine.camera.position.z < 0, 'resizing mid-flip reaches the flipped preset');
 });

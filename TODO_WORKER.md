@@ -165,3 +165,4 @@ Lệnh kiểm tra cơ bản: `npm test` (12 test engine cờ vua) và `npm run l
 - T3 — DONE — UI dùng rules, delegation, gợi ý/chiếu/nước cuối/quân bị ăn, undo theo lượt AI và chọn Đen/lật bàn. Test/lint PASS; UI sẽ kiểm tra tổng hợp T10.
 - T4 — DONE — AI negamax/alpha-beta, iterative deepening, MVV-LVA và vị trí; Worker có request id, fallback chia lát 8ms, hủy khi undo/new/destroy. 16 test cờ tướng và lint PASS.
 - T5 — DONE — Luật Caro thuần và AI pattern tấn công/phòng thủ, radius 2, thắng/chặn ngay, alpha-beta sâu 2–4 có hạn thời gian. 15 test Caro PASS; toàn bộ test/lint PASS.
+- T6 — DONE — Caro delegation, highlight nước cuối/5 ô thắng, hover preview, Worker và fallback chia lát, undo cặp nước hoặc một nước đang chờ AI, grid co giãn ô ≥22px. Test/lint PASS.
